@@ -1,4 +1,6 @@
-﻿# Okos Otthoni Edzésterv Generáló Alkalmazás (C#ardio)
+# Okos Otthoni Edzésterv Generáló Alkalmazás (C#ardio)
+
+Created by: ILMS
 
 ## Getting started
 
