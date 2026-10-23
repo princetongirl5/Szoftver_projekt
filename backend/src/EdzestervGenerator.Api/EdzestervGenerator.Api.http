@@ -23,3 +23,37 @@ Content-Type: application/json
   "name": "Teszt Elek",
   "email": "elek@example.com"
 }
+
+### List all equipment
+GET {{EdzestervGenerator.Api_HostAddress}}/api/equipment
+
+### Get the equipment a user has at home
+GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
+
+### Save the equipment a user has at home (replaces the whole list)
+PUT {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
+Content-Type: application/json
+
+[
+  { "equipmentId": 1, "weightKg": 3 },
+  { "equipmentId": 2, "weightKg": 8 },
+  { "equipmentId": 7, "weightKg": null }
+]
+
+### Get the calendar of a user for October (to is exclusive)
+GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1/workouts?from=2026-10-01&to=2026-11-01
+
+### Add an external activity to the calendar
+POST {{EdzestervGenerator.Api_HostAddress}}/api/users/1/workouts
+Content-Type: application/json
+
+{
+  "date": "2026-10-22T16:00:00Z",
+  "activity": "Football",
+  "durationMinutes": 90,
+  "intensity": "High",
+  "note": "Focimeccs"
+}
+
+### Delete a calendar entry
+DELETE {{EdzestervGenerator.Api_HostAddress}}/api/workouts/1
