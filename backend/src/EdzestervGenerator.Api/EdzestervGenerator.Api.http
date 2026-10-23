@@ -23,3 +23,19 @@ Content-Type: application/json
   "name": "Teszt Elek",
   "email": "elek@example.com"
 }
+
+### List all equipment
+GET {{EdzestervGenerator.Api_HostAddress}}/api/equipment
+
+### Get the equipment a user has at home
+GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
+
+### Save the equipment a user has at home (replaces the whole list)
+PUT {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
+Content-Type: application/json
+
+[
+  { "equipmentId": 1, "weightKg": 3 },
+  { "equipmentId": 2, "weightKg": 8 },
+  { "equipmentId": 7, "weightKg": null }
+]
