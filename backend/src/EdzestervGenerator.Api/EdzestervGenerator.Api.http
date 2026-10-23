@@ -1,1 +1,25 @@
 @EdzestervGenerator.Api_HostAddress = http://localhost:5013
+
+### List users
+GET {{EdzestervGenerator.Api_HostAddress}}/api/users
+
+### Get one user
+GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1
+
+### Create a user
+POST {{EdzestervGenerator.Api_HostAddress}}/api/users
+Content-Type: application/json
+
+{
+  "name": "Teszt Elek",
+  "email": "teszt.elek@example.com"
+}
+
+### Update a user
+PUT {{EdzestervGenerator.Api_HostAddress}}/api/users/1
+Content-Type: application/json
+
+{
+  "name": "Teszt Elek",
+  "email": "elek@example.com"
+}
