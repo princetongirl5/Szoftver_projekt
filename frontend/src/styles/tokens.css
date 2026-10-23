@@ -1,0 +1,65 @@
+/* C#ardio design tokens. Generated from the design system's tokens.json (version 3).
+   Light is the default; <html data-theme="dark"> switches to dark. */
+
+:root {
+  color-scheme: light;
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --z-nav: 10;
+  --z-overlay: 40;
+  --z-toast: 50;
+  --bg: #F6F7F4;
+  --surface: #FFFFFF;
+  --surface-2: #EEF0EA;
+  --border: #E2E4DE;
+  --border-strong: #8D9289;
+  --text: #161816;
+  --text-muted: #5B6058;
+  --accent: #4D7C0F;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E8F2D3;
+  --accent-text: #3B6108;
+  --warning: #A14A06;
+  --danger: #B42318;
+  --focus: var(--accent);
+  --shadow-pop: 0 8px 24px rgba(22, 24, 22, 0.10);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #101211;
+  --surface: #171918;
+  --surface-2: #1F2220;
+  --border: #2A2D2B;
+  --border-strong: #6B7069;
+  --text: #F0F2EC;
+  --text-muted: #A3A89E;
+  --accent: #B6F23A;
+  --accent-ink: #0F1405;
+  --accent-soft: #222D10;
+  --accent-text: #C6F66A;
+  --warning: #F0A94A;
+  --danger: #F27A70;
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}
