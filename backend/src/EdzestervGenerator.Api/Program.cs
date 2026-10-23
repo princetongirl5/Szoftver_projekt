@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using EdzestervGenerator.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,7 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+// Enums are sent as text in JSON, e.g. "Football" instead of 1.
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
