@@ -1,0 +1,99 @@
+<header class="cx-topnav">
+  <app-logo />
+  <button type="button" class="cx-btn cx-btn--ghost" (click)="state.reset()">Kilépés</button>
+</header>
+
+<main class="body">
+  @let step = state.step();
+  @let answers = state.answers();
+  @let status = state.status();
+  <app-wizard-stepper [current]="step" />
+
+  <div class="columns">
+    <section class="question" aria-labelledby="question-title">
+      <div class="question__body">
+        <div class="question__head">
+          <h1 id="question-title">{{ stepCopy().title }}</h1>
+          <p class="hint">{{ stepCopy().hint }}</p>
+        </div>
+
+        @switch (step) {
+          @case (1) {
+            <app-goal-step [selected]="answers.goal" (selectGoal)="state.setGoal($event)" />
+          }
+          @case (2) {
+            <app-location-step
+              [selected]="answers.location"
+              [equipment]="equipmentList()"
+              [equipmentIds]="answers.equipmentIds"
+              [equipmentLoading]="equipment.isLoading()"
+              [equipmentError]="!!equipment.error()"
+              (selectLocation)="state.setLocation($event)"
+              (toggleEquipment)="state.toggleEquipment($event)"
+            />
+          }
+          @case (3) {
+            <app-days-step [selected]="answers.days" (toggleDay)="state.toggleDay($event)" />
+          }
+          @case (4) {
+            <app-session-step
+              [selectedMinutes]="answers.sessionMinutes"
+              [selectedDifficulty]="answers.difficulty"
+              (selectMinutes)="state.setSessionMinutes($event)"
+              (selectDifficulty)="state.setDifficulty($event)"
+            />
+          }
+          @case (5) {
+            <app-review-step
+              [answers]="answers"
+              [equipment]="equipmentList()"
+              (edit)="state.goTo($event)"
+            />
+            @if (status === 'error') {
+              <div class="cx-alert cx-alert--danger" role="alert">
+                <lucide-icon [img]="CircleAlert" aria-hidden="true" />
+                <span>Nem sikerült elkészíteni a tervet. Próbáld újra.</span>
+              </div>
+            } @else if (status === 'done') {
+              <div class="cx-alert cx-alert--success" role="status">
+                <lucide-icon [img]="CircleCheck" aria-hidden="true" />
+                <span>Elkészült a terved: {{ workoutDays() }} edzésnap a héten.</span>
+              </div>
+            }
+          }
+        }
+      </div>
+
+      <div class="question__footer">
+        @if (step === 1) {
+          <button type="button" class="cx-btn cx-btn--ghost" (click)="state.reset()">Mégse</button>
+        } @else {
+          <button type="button" class="cx-btn cx-btn--ghost" (click)="state.back()">Vissza</button>
+        }
+        @if (step === 5) {
+          <button
+            type="button"
+            class="cx-btn cx-btn--primary"
+            [disabled]="!state.canGoNext() || status === 'done'"
+            (click)="state.submit()"
+          >
+            {{ status === 'submitting' ? 'Terv készítése…' : 'Terv generálása' }}
+            <lucide-icon [img]="ArrowRight" aria-hidden="true" />
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="cx-btn cx-btn--primary"
+            [disabled]="!state.canGoNext()"
+            (click)="state.next()"
+          >
+            Tovább
+            <lucide-icon [img]="ArrowRight" aria-hidden="true" />
+          </button>
+        }
+      </div>
+    </section>
+
+    <app-why-panel [step]="step" />
+  </div>
+</main>
