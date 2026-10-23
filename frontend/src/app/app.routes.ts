@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'tervezes' },
+  { path: '', pathMatch: 'full', redirectTo: 'plan' },
   {
-    path: 'tervezes',
+    path: 'plan',
     loadComponent: () => import('./features/plan-wizard/plan-wizard').then((m) => m.PlanWizard),
   },
 ];
