@@ -30,6 +30,43 @@ namespace EdzestervGenerator.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Equipment");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Kézisúlyzó"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Kettlebell"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Húzódzkodó rúd"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Gumiszalag"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Szőnyeg"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Pad"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Ugrálókötél"
+                        });
                 });
 
             modelBuilder.Entity("EdzestervGenerator.Api.Models.Exercise", b =>
