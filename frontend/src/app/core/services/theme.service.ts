@@ -14,6 +14,14 @@ export class ThemeService {
     effect(() => this.document.documentElement.setAttribute('data-theme', this.theme()));
   }
 
+  toggle(): void {
+    const next: Theme = this.theme() === 'dark' ? 'light' : 'dark';
+    this.theme.set(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {}
+  }
+
   // Saved choice first, then the OS preference. Storage can throw (private mode, blocked site data).
   private initialTheme(): Theme {
     try {
