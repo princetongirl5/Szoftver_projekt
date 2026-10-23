@@ -39,4 +39,14 @@ describe('ThemeService', () => {
     localStorage.setItem('cardio-theme', 'light');
     expect(TestBed.inject(ThemeService).theme()).toBe('light');
   });
+
+  it('toggle switches the theme and saves it', () => {
+    mockOsDark(false);
+    const service = TestBed.inject(ThemeService);
+
+    service.toggle();
+
+    expect(service.theme()).toBe('dark');
+    expect(localStorage.getItem('cardio-theme')).toBe('dark');
+  });
 });
