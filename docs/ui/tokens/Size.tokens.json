@@ -1,0 +1,46 @@
+{
+  "space-1": {
+    "$type": "number",
+    "$value": 4
+  },
+  "space-2": {
+    "$type": "number",
+    "$value": 8
+  },
+  "space-3": {
+    "$type": "number",
+    "$value": 12
+  },
+  "space-4": {
+    "$type": "number",
+    "$value": 16
+  },
+  "space-6": {
+    "$type": "number",
+    "$value": 24
+  },
+  "space-8": {
+    "$type": "number",
+    "$value": 32
+  },
+  "space-12": {
+    "$type": "number",
+    "$value": 48
+  },
+  "radius-sm": {
+    "$type": "number",
+    "$value": 6
+  },
+  "radius-md": {
+    "$type": "number",
+    "$value": 8
+  },
+  "radius-lg": {
+    "$type": "number",
+    "$value": 12
+  },
+  "radius-full": {
+    "$type": "number",
+    "$value": 999
+  }
+}
