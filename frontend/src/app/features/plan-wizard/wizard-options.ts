@@ -84,7 +84,6 @@ export const LEVELS: Choice<Difficulty>[] = [
 /** The split shown on step 3; the backend decides the real one. */
 export function splitLabel(dayCount: number): string | null {
   if (dayCount >= 2 && dayCount <= 3) return 'Teljes test';
-  if (dayCount === 4) return 'Felsőtest / Alsótest';
-  if (dayCount >= 5 && dayCount <= 6) return 'Izomcsoportonként';
+  if (dayCount >= 4 && dayCount <= 6) return 'Felsőtest / Alsótest';
   return null;
 }
