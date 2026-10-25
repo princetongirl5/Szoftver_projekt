@@ -25,19 +25,27 @@ public sealed class WorkoutGenerator : IWorkoutGenerator
             .Where(e => (int)e.Difficulty <= (int)request.Difficulty)
             .ToList();
 
-        var days = request.Days.Distinct().OrderBy(WeekOrder).ToArray();
-        var fullBody = days.Length <= 3;
-        var plans = new List<GeneratedWorkoutDay>(days.Length);
+        var trainingDays = request.Days.Distinct().OrderBy(WeekOrder).ToArray();
+        var trainingDaySet = trainingDays.ToHashSet();
+        var fullBody = trainingDays.Length <= 3;
+        var plans = new List<GeneratedWorkoutDay>(7);
         var usedInWeek = new HashSet<int>();
+        var workoutIndex = 0;
 
-        for (var i = 0; i < days.Length; i++)
+        foreach (var day in Enum.GetValues<DayOfWeek>().OrderBy(WeekOrder))
         {
-            var day = days[i];
+            if (!trainingDaySet.Contains(day))
+            {
+                plans.Add(new GeneratedWorkoutDay(day, null, []));
+                continue;
+            }
+
+            var i = workoutIndex++;
             var groups = fullBody
-                ? new[] { MuscleGroup.FullBody, MuscleGroup.UpperBody, MuscleGroup.LowerBody, MuscleGroup.Core }
+                ? new[] { MuscleGroup.FullBody, MuscleGroup.UpperBody, MuscleGroup.LowerBody, MuscleGroup.Core, MuscleGroup.Mobility }
                 : i % 2 == 0
-                    ? new[] { MuscleGroup.UpperBody, MuscleGroup.Core, MuscleGroup.FullBody }
-                    : new[] { MuscleGroup.LowerBody, MuscleGroup.Core, MuscleGroup.FullBody };
+                    ? new[] { MuscleGroup.UpperBody, MuscleGroup.Core, MuscleGroup.Mobility }
+                    : new[] { MuscleGroup.LowerBody, MuscleGroup.Core, MuscleGroup.Mobility };
 
             var candidates = available.Where(e => groups.Contains(e.MuscleGroup)).ToList();
             // Staple push-ups are selected first on at least one upper-body day when available.
@@ -46,6 +54,14 @@ public sealed class WorkoutGenerator : IWorkoutGenerator
                 || e.Name.Contains("push up", StringComparison.OrdinalIgnoreCase));
             var selected = new List<Exercise>();
             if (staple is not null && !usedInWeek.Contains(staple.Id)) selected.Add(staple);
+
+            // Split sessions include at least two exercises for their main body area.
+            // Full-body sessions sample upper body, lower body and core when available.
+            var priorityGroups = fullBody
+                ? new[] { MuscleGroup.UpperBody, MuscleGroup.LowerBody, MuscleGroup.Core }
+                : new[] { groups[0], groups[0] };
+            foreach (var group in priorityGroups)
+                AddOneFromGroup(selected, candidates, usedInWeek, group);
 
             var fresh = candidates.Where(e => selected.All(s => s.Id != e.Id) && !usedInWeek.Contains(e.Id)).ToList();
             Shuffle(fresh, random);
@@ -65,7 +81,7 @@ public sealed class WorkoutGenerator : IWorkoutGenerator
             var planned = selected.Select(e => new PlannedExercise(e, sets,
                 e.MuscleGroup == MuscleGroup.Mobility ? Math.Max(reps, 12) : reps,
                 e.EquipmentId is null ? null : e.MinWeightKg)).ToArray();
-            plans.Add(new GeneratedWorkoutDay(day, WorkoutName(groups, i, fullBody), planned));
+            plans.Add(new GeneratedWorkoutDay(day, WorkoutName(groups, fullBody), planned));
         }
 
         return plans;
@@ -95,11 +111,23 @@ public sealed class WorkoutGenerator : IWorkoutGenerator
         return (sets, reps);
     }
 
-    private static string WorkoutName(MuscleGroup[] groups, int index, bool fullBody) => fullBody
+    private static string WorkoutName(MuscleGroup[] groups, bool fullBody) => fullBody
         ? "Teljes test"
         : groups[0] == MuscleGroup.UpperBody
-            ? $"Felsőtest {(index / 2) + 1}"
-            : $"Alsótest {(index / 2) + 1}";
+            ? "Felsőtest"
+            : "Alsótest";
+
+    private static void AddOneFromGroup(
+        List<Exercise> selected,
+        IReadOnlyList<Exercise> candidates,
+        HashSet<int> usedInWeek,
+        MuscleGroup group)
+    {
+        var next = candidates.FirstOrDefault(e => e.MuscleGroup == group
+                && !usedInWeek.Contains(e.Id) && selected.All(s => s.Id != e.Id))
+            ?? candidates.FirstOrDefault(e => e.MuscleGroup == group && selected.All(s => s.Id != e.Id));
+        if (next is not null) selected.Add(next);
+    }
 
     private static int WeekOrder(DayOfWeek day) => ((int)day + 6) % 7;
 

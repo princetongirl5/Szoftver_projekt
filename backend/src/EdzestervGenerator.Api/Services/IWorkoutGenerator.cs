@@ -13,4 +13,4 @@ public interface IWorkoutGenerator
 }
 
 public sealed record PlannedExercise(Exercise Exercise, int Sets, int Reps, double? WeightKg);
-public sealed record GeneratedWorkoutDay(DayOfWeek Day, string Name, IReadOnlyList<PlannedExercise> Exercises);
+public sealed record GeneratedWorkoutDay(DayOfWeek Day, string? Name, IReadOnlyList<PlannedExercise> Exercises);
