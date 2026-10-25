@@ -60,7 +60,7 @@ public sealed class PlansController(AppDbContext db, IWorkoutGenerator generator
             .ToListAsync();
         db.Workouts.RemoveRange(oldPlans);
 
-        foreach (var day in generated)
+        foreach (var day in generated.Where(day => day.Name is not null))
         {
             var localDate = DateOnly.FromDateTime(LocalDateForDay(weekStartUtc, day.Day, timeZone));
             var localMidnight = localDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
