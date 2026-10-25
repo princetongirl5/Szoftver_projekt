@@ -12,22 +12,22 @@ const PANELS = [
   {
     image: 'Kép: otthoni eszközök',
     heading: 'Csak olyat kapsz, amit meg tudsz csinálni',
-    text: 'Ha nincs rudad, a tervező kézisúlyzós vagy testsúlyos változatot választ ugyanarra az izomcsoportra. Az eszközlistát később is bővítheted.',
+    text: 'Ha nincs rudad, a tervező kézisúlyzós vagy testsúlyos változatot választ ugyanarra az izomcsoportra.',
   },
   {
     image: 'Kép: heti felosztás',
     heading: 'A napokból lesz a felosztás',
-    text: '2-3 napnál teljes test, 4 napnál felső és alsó test váltja egymást, 5-6 napnál izomcsoportonként bontunk. Minden izom kap legalább 2 nap pihenőt.',
+    text: '2-3 napnál teljes test, 4-6 napnál felső és alsó test váltja egymást, így két egymást követő napon más izmok dolgoznak.',
   },
   {
     image: 'Kép: edzés közben',
     heading: 'Az idő és a szint adja a mennyiséget',
-    text: '60 percbe általában 5 gyakorlat fér bele. Kezdőként kevesebb sorozattal indulsz, és a terhelés hétről hétre nő.',
+    text: '60 percbe általában 5 gyakorlat fér bele. Kezdőként kevesebb sorozattal indulsz.',
   },
   {
     image: 'Kép: kész terv',
-    heading: 'Később is bármit módosíthatsz',
-    text: 'Ha változik a heted vagy új eszközöd lesz, a beállításokban újragenerálhatod a tervet. Az eddigi eredményeid megmaradnak.',
+    heading: 'Bármikor újratervezheted',
+    text: 'Ha változik a heted vagy új eszközöd lesz, a Tervezés menüpontban új tervet kérhetsz. Az új terv a mostani hét helyére kerül.',
   },
 ];
 
