@@ -1,4 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
 import {
   DayOfWeek,
@@ -7,7 +9,6 @@ import {
   Goal,
   Location,
   SessionMinutes,
-  WeekPlan,
 } from '../../core/models/plan';
 import { PlanService } from '../../core/services/plan.service';
 import { DAYS } from './wizard-options';
@@ -25,7 +26,9 @@ export interface WizardAnswers {
   difficulty: Difficulty | null;
 }
 
-export type SubmitStatus = 'idle' | 'submitting' | 'done' | 'error';
+export type SubmitStatus = 'idle' | 'submitting' | 'error';
+
+const GENERIC_ERROR = 'Nem sikerült elkészíteni a tervet. Próbáld újra.';
 
 const EMPTY_ANSWERS: WizardAnswers = {
   goal: null,
@@ -40,11 +43,13 @@ const EMPTY_ANSWERS: WizardAnswers = {
 @Injectable()
 export class WizardStateService {
   private readonly planService = inject(PlanService);
+  private readonly router = inject(Router);
 
   readonly step = signal<WizardStep>(1);
   readonly answers = signal<WizardAnswers>(EMPTY_ANSWERS);
   readonly status = signal<SubmitStatus>('idle');
-  readonly plan = signal<WeekPlan | null>(null);
+  /** Shown on the review while status is 'error'. */
+  readonly errorMessage = signal(GENERIC_ERROR);
 
   /** Whether "Tovább" (or "Terv generálása" on the last step) is enabled. */
   readonly canGoNext = computed(
@@ -103,20 +108,18 @@ export class WizardStateService {
     this.step.set(1);
     this.answers.set(EMPTY_ANSWERS);
     this.status.set('idle');
-    this.plan.set(null);
   }
 
-  /** Sends the answers to PlanService. */
+  /** Sends the answers to PlanService, then opens the new week on the dashboard. */
   submit(): void {
     if (this.step() !== 5 || !this.canGoNext()) return;
     this.status.set('submitting');
     this.planService.generate(this.toRequest()).subscribe({
-      next: (plan) => {
-        this.plan.set(plan);
-        this.status.set('done');
-        // TODO: navigate to the dashboard once its route exists.
+      next: () => this.router.navigateByUrl('/week'),
+      error: (error: unknown) => {
+        this.errorMessage.set(validationMessage(error) ?? GENERIC_ERROR);
+        this.status.set('error');
       },
-      error: () => this.status.set('error'),
     });
   }
 
@@ -153,4 +156,11 @@ export class WizardStateService {
       difficulty: a.difficulty!,
     };
   }
+}
+
+/** The first message of a 400 ValidationProblem; the backend writes them in Hungarian. */
+function validationMessage(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse) || error.status !== 400) return null;
+  const errors: Record<string, string[]> | undefined = error.error?.errors;
+  return errors ? (Object.values(errors).flat()[0] ?? null) : null;
 }
