@@ -1,4 +1,6 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { GeneratePlanRequest, WeekPlan } from '../../core/models/plan';
@@ -8,12 +10,18 @@ import { WizardStateService } from './wizard-state.service';
 describe('WizardStateService', () => {
   let state: WizardStateService;
   let generate: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.spyOn>;
 
   const setup = (result = of<WeekPlan>({ days: [] })) => {
     generate = vi.fn((_: GeneratePlanRequest) => result);
     TestBed.configureTestingModule({
-      providers: [WizardStateService, { provide: PlanService, useValue: { generate } }],
+      providers: [
+        WizardStateService,
+        provideRouter([]),
+        { provide: PlanService, useValue: { generate } },
+      ],
     });
+    navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     state = TestBed.inject(WizardStateService);
   };
 
@@ -80,7 +88,7 @@ describe('WizardStateService', () => {
       sessionMinutes: 45,
       difficulty: 'Easy',
     });
-    expect(state.status()).toBe('done');
+    expect(navigate).toHaveBeenCalledWith('/week');
   });
 
   it('sends no equipment for the gym', () => {
@@ -100,7 +108,23 @@ describe('WizardStateService', () => {
     state.submit();
 
     expect(state.status()).toBe('error');
+    expect(state.errorMessage()).toBe('Nem sikerült elkészíteni a tervet. Próbáld újra.');
     expect(state.canGoNext()).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("shows the backend's message for a 400", () => {
+    const message = 'A megadott feltételekkel nem található gyakorlat.';
+    setup(
+      throwError(
+        () => new HttpErrorResponse({ status: 400, error: { errors: { exercises: [message] } } }),
+      ),
+    );
+    fillAll();
+
+    state.submit();
+
+    expect(state.errorMessage()).toBe(message);
   });
 
   it('reset starts over', () => {
