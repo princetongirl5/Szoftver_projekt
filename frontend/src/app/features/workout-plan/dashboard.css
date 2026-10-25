@@ -1,0 +1,230 @@
+/* Desktop only for now, like the wizard (Figma reference: 1440 wide). */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-12) 0;
+}
+
+.head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.head__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head__title .cx-eyebrow {
+  margin: 0;
+}
+
+h1 {
+  margin: 0;
+  font: 600 28px/34px var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.head__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.week-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 220px;
+}
+
+.week-progress__label {
+  display: flex;
+  justify-content: space-between;
+  font: 400 13px/20px var(--font-sans);
+  color: var(--text-muted);
+}
+
+.week-progress__label .cx-num {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.strip .cx-day {
+  min-height: 112px;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.strip__skeleton {
+  height: 112px;
+  border-radius: var(--radius-md);
+}
+
+.main-skeleton {
+  height: 640px;
+  border-radius: var(--radius-lg);
+}
+
+.day__count {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.workout {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.workout__media {
+  border-radius: 0;
+  aspect-ratio: auto;
+  height: 260px;
+}
+
+.workout__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.workout__body .cx-eyebrow {
+  margin: 0;
+}
+
+#workout-title {
+  margin: 0;
+  font: 600 28px/34px var(--font-sans);
+  letter-spacing: -0.02em;
+}
+
+.workout__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.workout__meta {
+  margin: var(--space-1) 0 0;
+  font: 400 13px/20px var(--font-sans);
+}
+
+.workout__count {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.exercises {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+
+.exercises .cx-row {
+  padding: var(--space-4) 0;
+}
+
+.exercises .cx-row:first-child {
+  border-top: 0;
+}
+
+.cx-check[disabled] {
+  cursor: progress;
+}
+
+.weight {
+  min-width: 64px;
+  text-align: right;
+}
+
+.workout__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-3);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.side__day {
+  font: 400 13px/20px var(--font-sans);
+}
+
+.side__map {
+  margin-bottom: var(--space-4);
+}
+
+.side__note {
+  margin: 0;
+  font: 400 13px/20px var(--font-sans);
+}
+
+.muscles {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.muscle {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--border);
+  font: 400 13px/20px var(--font-sans);
+}
+
+.muscle__load {
+  color: var(--text-muted);
+}
+
+.muscle__load--today {
+  color: var(--warning);
+}
+
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+h2.cx-card__title,
+.next .cx-eyebrow,
+.next__meta {
+  margin: 0;
+}
+
+.next__meta {
+  font: 400 13px/20px var(--font-sans);
+}
+
+.retry {
+  margin-left: auto;
+  min-height: 28px;
+}

@@ -20,6 +20,8 @@ export interface GeneratePlanRequest {
 }
 
 export interface PlanExercise {
+  /** The WorkoutExercise id, used by PATCH /api/plans/exercises/{id}. */
+  id: number;
   /** As it comes from wger, mostly English. */
   name: string;
   muscleGroup: string;
