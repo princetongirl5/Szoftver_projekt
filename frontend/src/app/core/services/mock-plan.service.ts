@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Observable, delay, of } from 'rxjs';
+import { Observable, delay, of, throwError } from 'rxjs';
 
 import { GeneratePlanRequest, PlanExercise, WeekPlan } from '../models/plan';
 import { PlanService } from './plan.service';
+
+let nextId = 101;
 
 const ex = (
   name: string,
@@ -10,7 +12,15 @@ const ex = (
   sets: number,
   reps: number,
   weightKg: number | null,
-): PlanExercise => ({ name, muscleGroup, sets, reps, weightKg, isDone: false });
+): PlanExercise => ({
+  id: nextId++,
+  name,
+  muscleGroup,
+  sets,
+  reps,
+  weightKg,
+  isDone: false,
+});
 
 const MOCK_WEEK: WeekPlan = {
   days: [
@@ -66,12 +76,23 @@ const MOCK_WEEK: WeekPlan = {
 
 @Injectable()
 export class MockPlanService extends PlanService {
+  // Kept for the session, so ticked exercises stay ticked when you come back to the dashboard.
+  private week = structuredClone(MOCK_WEEK);
+
   // Ignores the request and always returns the same week; the real plan comes from the backend.
   generate(_request: GeneratePlanRequest): Observable<WeekPlan> {
+    this.week = structuredClone(MOCK_WEEK);
     return this.getCurrentWeek();
   }
 
   getCurrentWeek(): Observable<WeekPlan> {
-    return of(structuredClone(MOCK_WEEK)).pipe(delay(400));
+    return of(structuredClone(this.week)).pipe(delay(400));
+  }
+
+  setExerciseDone(exerciseId: number, isDone: boolean): Observable<void> {
+    const exercise = this.week.days.flatMap((d) => d.exercises).find((e) => e.id === exerciseId);
+    if (!exercise) return throwError(() => new Error(`No exercise with id ${exerciseId}`));
+    exercise.isDone = isDone;
+    return of(undefined).pipe(delay(150));
   }
 }

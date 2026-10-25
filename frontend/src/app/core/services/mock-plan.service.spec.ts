@@ -19,10 +19,20 @@ describe('MockPlanService', () => {
     }
     for (const ex of workouts.flatMap((d) => d.exercises)) {
       expect(Object.keys(ex).sort()).toEqual(
-        ['isDone', 'muscleGroup', 'name', 'reps', 'sets', 'weightKg'].sort(),
+        ['id', 'isDone', 'muscleGroup', 'name', 'reps', 'sets', 'weightKg'].sort(),
       );
       expect(ex.sets).toBeGreaterThan(0);
       expect(ex.reps).toBeGreaterThan(0);
     }
+  });
+
+  it('remembers a ticked exercise for the next request', async () => {
+    const service = new MockPlanService();
+    const first = (await firstValueFrom(service.getCurrentWeek())).days[0].exercises[0];
+
+    await firstValueFrom(service.setExerciseDone(first.id, true));
+
+    const again = (await firstValueFrom(service.getCurrentWeek())).days[0].exercises[0];
+    expect(again.isDone).toBe(true);
   });
 });

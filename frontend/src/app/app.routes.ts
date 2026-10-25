@@ -6,4 +6,8 @@ export const routes: Routes = [
     path: 'plan',
     loadComponent: () => import('./features/plan-wizard/plan-wizard').then((m) => m.PlanWizard),
   },
+  {
+    path: 'week',
+    loadComponent: () => import('./features/workout-plan/dashboard').then((m) => m.Dashboard),
+  },
 ];
