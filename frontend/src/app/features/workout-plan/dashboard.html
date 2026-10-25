@@ -1,0 +1,231 @@
+<app-top-nav [items]="navItems" />
+
+<main class="body">
+  <header class="head">
+    <div class="head__title">
+      <p class="cx-eyebrow">
+        {{ range }}
+        @if (split(); as split) {
+          · {{ split }}
+        }
+      </p>
+      <h1>Heti terv</h1>
+    </div>
+    @if (week()) {
+      <div class="head__actions">
+        <div class="week-progress">
+          <div class="week-progress__label">
+            <span>Ez a hét</span>
+            <span class="cx-num">{{ doneCount() }} / {{ workoutCount() }} edzés</span>
+          </div>
+          <div
+            class="cx-progress"
+            role="progressbar"
+            aria-label="Heti edzések"
+            [attr.aria-valuenow]="doneCount()"
+            aria-valuemin="0"
+            [attr.aria-valuemax]="workoutCount()"
+          >
+            <span
+              [style.width.%]="workoutCount() ? (doneCount() / workoutCount()) * 100 : 0"
+            ></span>
+          </div>
+        </div>
+        <a class="cx-btn" routerLink="/plan">Újratervezés</a>
+      </div>
+    }
+  </header>
+
+  @if (plan.isLoading()) {
+    <div class="strip" aria-busy="true" aria-label="Heti terv betöltése">
+      @for (i of [0, 1, 2, 3, 4, 5, 6]; track i) {
+        <span class="cx-skeleton strip__skeleton"></span>
+      }
+    </div>
+    <span class="cx-skeleton main-skeleton"></span>
+  } @else if (noPlan()) {
+    <div class="cx-empty">
+      <p class="cx-empty__title">Erre a hétre még nincs terved</p>
+      <p class="cx-empty__text">Válaszolj néhány kérdésre, és összerakjuk a heti edzéseidet.</p>
+      <a class="cx-btn cx-btn--primary" routerLink="/plan">Terv készítése</a>
+    </div>
+  } @else if (plan.error()) {
+    <div class="cx-alert cx-alert--danger" role="alert">
+      <lucide-icon [img]="CircleAlert" aria-hidden="true" />
+      <span>Nem sikerült betölteni a heti tervet.</span>
+      <button type="button" class="cx-btn cx-btn--ghost retry" (click)="plan.reload()">Újra</button>
+    </div>
+  } @else {
+    <div class="strip" role="group" aria-label="A hét napjai">
+      @for (day of days(); track day.index) {
+        <button
+          type="button"
+          class="cx-day"
+          [class.cx-day--rest]="day.isRest"
+          [class.cx-day--today]="day.isToday"
+          [attr.aria-pressed]="day.index === selectedIndex()"
+          [attr.aria-label]="day.label + ', ' + (day.plan.workoutName ?? 'pihenő')"
+          (click)="select(day.index)"
+        >
+          <span class="cx-day__name">{{ day.short }} · {{ day.date }}</span>
+          <span class="cx-day__type">{{ day.plan.workoutName ?? 'Pihenő' }}</span>
+          @if (day.isDone) {
+            <span class="cx-badge cx-badge--done">
+              <lucide-icon [img]="Check" [size]="12" aria-hidden="true" />Kész
+            </span>
+          } @else if (day.isToday && !day.isRest) {
+            <span class="cx-badge cx-badge--today">Ma</span>
+          } @else if (!day.isRest) {
+            <span class="cx-num cx-muted day__count">{{ day.plan.exercises.length }} gyak.</span>
+          }
+        </button>
+      }
+    </div>
+
+    @if (selected(); as day) {
+      <div class="columns">
+        <section class="workout" aria-labelledby="workout-title">
+          <div class="cx-media workout__media">
+            <span class="cx-media__empty">
+              <lucide-icon [img]="Image" aria-hidden="true" />
+            </span>
+          </div>
+
+          <div class="workout__body">
+            <p class="cx-eyebrow">
+              @if (day.isToday) {
+                Ma ·
+              }
+              {{ day.label }} · {{ day.date }}
+            </p>
+
+            @if (day.isRest) {
+              <h2 id="workout-title">Pihenőnap</h2>
+              <p class="cx-muted workout__meta">
+                Ezen a napon nincs edzés. A pihenés is a terv része: ilyenkor épülnek az izmok.
+              </p>
+            } @else {
+              <div class="workout__head">
+                <div>
+                  <h2 id="workout-title">{{ day.plan.workoutName }}</h2>
+                  <p class="cx-muted workout__meta">
+                    {{ day.plan.exercises.length }} gyakorlat ·
+                    {{ joinMuscles(selectedMuscles()) }}
+                  </p>
+                </div>
+                <span class="cx-num workout__count">
+                  {{ selectedDone() }} / {{ day.plan.exercises.length }}
+                </span>
+              </div>
+              <div
+                class="cx-progress"
+                role="progressbar"
+                aria-label="Elvégzett gyakorlatok"
+                [attr.aria-valuenow]="selectedDone()"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="day.plan.exercises.length"
+              >
+                <span [style.width.%]="(selectedDone() / day.plan.exercises.length) * 100"></span>
+              </div>
+
+              <ul class="exercises">
+                @for (exercise of day.plan.exercises; track exercise.id) {
+                  <li class="cx-row" [class.cx-row--done]="exercise.isDone">
+                    <button
+                      type="button"
+                      class="cx-check"
+                      role="checkbox"
+                      [attr.aria-checked]="exercise.isDone"
+                      [attr.aria-label]="exercise.name + ' kész'"
+                      [disabled]="isSaving(exercise)"
+                      (click)="toggle(exercise)"
+                    >
+                      @if (exercise.isDone) {
+                        <lucide-icon [img]="Check" aria-hidden="true" />
+                      }
+                    </button>
+                    <span class="cx-media cx-media--thumb">
+                      <lucide-icon [img]="Dumbbell" [size]="16" aria-hidden="true" />
+                    </span>
+                    <div class="cx-row__main">
+                      <div class="cx-row__title">{{ exercise.name }}</div>
+                      <div class="cx-row__meta">{{ muscleLabel(exercise.muscleGroup) }}</div>
+                    </div>
+                    <div class="cx-row__nums">
+                      <span>{{ exercise.sets }} × {{ exercise.reps }}</span>
+                      <span class="weight">{{
+                        exercise.weightKg === null ? 'testsúly' : exercise.weightKg + ' kg'
+                      }}</span>
+                    </div>
+                  </li>
+                }
+              </ul>
+
+              @if (saveError()) {
+                <div class="cx-alert cx-alert--danger" role="alert">
+                  <lucide-icon [img]="CircleAlert" aria-hidden="true" />
+                  <span>Nem sikerült menteni. Próbáld újra.</span>
+                </div>
+              }
+
+              <div class="workout__footer">
+                <button
+                  type="button"
+                  class="cx-btn cx-btn--primary cx-btn--lg"
+                  [disabled]="day.isDone"
+                  (click)="finish()"
+                >
+                  {{ day.isDone ? 'Edzés kész' : 'Edzés befejezése' }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="cx-card" aria-labelledby="muscles-title">
+            <div class="cx-card__head">
+              <h2 class="cx-card__title" id="muscles-title">Érintett izmok</h2>
+              <span class="cx-muted side__day">{{ day.label }}</span>
+            </div>
+            <div class="cx-media cx-media--square side__map">
+              <span class="cx-media__empty">
+                <lucide-icon [img]="PersonStanding" aria-hidden="true" />
+              </span>
+            </div>
+            @if (selectedMuscles().length) {
+              <ul class="muscles">
+                @for (muscle of selectedMuscles(); track muscle) {
+                  <li class="muscle">
+                    <span>{{ muscle }}</span>
+                    <span class="muscle__load" [class.muscle__load--today]="day.isToday">{{
+                      loadText()
+                    }}</span>
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="cx-muted side__note">Pihenőnapon egyik izom sincs terhelve.</p>
+            }
+          </section>
+
+          <section class="cx-card next" aria-labelledby="next-title">
+            <p class="cx-eyebrow">Következő edzés</p>
+            @if (nextWorkout(); as next) {
+              <h2 class="cx-card__title" id="next-title">
+                {{ next.label }} · {{ next.plan.workoutName }}
+              </h2>
+              <p class="cx-muted next__meta">
+                {{ next.plan.exercises.length }} gyakorlat ·
+                {{ joinMuscles(muscleList(next.plan)) }}
+              </p>
+            } @else {
+              <h2 class="cx-card__title" id="next-title">Ezen a héten nincs több</h2>
+              <p class="cx-muted next__meta">A jövő heti tervet a Tervezésnél készítheted el.</p>
+            }
+          </section>
+        </aside>
+      </div>
+    }
+  }
+</main>
