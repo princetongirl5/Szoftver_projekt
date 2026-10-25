@@ -1,1 +1,9 @@
-/* You can add global styles to this file, and also import other style files */
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import './styles/tokens.css';
+@import './styles/components.css';
+
+/* The design system does not reset the browser default 8px body margin. */
+body {
+  margin: 0;
+}
