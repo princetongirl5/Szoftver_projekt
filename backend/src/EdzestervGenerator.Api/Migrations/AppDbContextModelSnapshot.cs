@@ -66,6 +66,31 @@ namespace EdzestervGenerator.Api.Migrations
                         {
                             Id = 7,
                             Name = "Ugrálókötél"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Rúd"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "SZ-rúd"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "Ferde pad"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "Kábelgép"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "Fitneszlabda"
                         });
                 });
 
