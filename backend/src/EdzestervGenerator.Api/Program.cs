@@ -1,3 +1,5 @@
+using EdzestervGenerator.Api.Services;
+using EdzestervGenerator.Api.Data.Seed;
 using System.Text.Json.Serialization;
 using EdzestervGenerator.Api.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +17,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddScoped<IWorkoutGenerator, WorkoutGenerator>();
+
 var app = builder.Build();
 
 // Create or update the database on startup.
@@ -22,6 +26,12 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+if (!db.Exercises.Any())
+{
+    db.Exercises.AddRange(ExerciseSeed.Items);
+    db.SaveChanges();
+}
 }
 
 // Configure the HTTP request pipeline.
