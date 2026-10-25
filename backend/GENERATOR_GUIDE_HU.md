@@ -32,7 +32,7 @@ A szabályok külön `WorkoutGenerator` osztályban vannak, ezért az osztály a
 
 A `sessionMinutes` 45/60/75/90 perc esetén 4/5/6/7 gyakorlatot kér. Ha az otthoni eszközök és a nehézség mellett kevesebb gyakorlat marad, a terv rövidebb lesz. A kézisúlyzós példagyakorlatok kezdeti súlya a katalógus `MinWeightKg` értéke; a kérés jelenlegi frontend-sémája csak eszközazonosítókat küld, felhasználói súlyokat nem.
 
-A hét hétfőtől vasárnapig jelenik meg, Budapest helyi hete szerint. Legfeljebb három edzésnapnál teljes testes nap készül, négy vagy több napnál felső és alsótest váltja egymást. Ha elérhető a katalógusban fekvőtámasz, a heti generálás egyik felsőtestes napjára bekerül, így van egy követhető alapgyakorlat.
+A válasz mindig a hét mind a hét napját tartalmazza, hétfőtől vasárnapig, Budapest helyi hete szerint. A kiválasztott napokon van edzés, a többi nap pihenőnap. Hat kiválasztott edzésnap esetén pontosan egy pihenőnap lesz; ha kevesebb napot jelöl meg valaki, több pihenőnap marad. Legfeljebb három edzésnapnál teljes testes nap készül, négy vagy több napnál felsőtest és alsótest váltja egymást. A felsőtest napokban legalább két felsőtestes, az alsótest napokban legalább két alsótestes gyakorlat szerepel, ha van megfelelő gyakorlat a katalógusban. A törzs (has és törzsstabilizáló gyakorlatok) és az átmozgatás kiegészítőként kerülhet be. Ha elérhető a katalógusban fekvőtámasz, legalább az egyik felsőtestes napra bekerül, így van egy követhető alapgyakorlat.
 
 ## Fontos egyeztetés a csapattal
 
