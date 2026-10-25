@@ -52,12 +52,7 @@
             @if (status === 'error') {
               <div class="cx-alert cx-alert--danger" role="alert">
                 <lucide-icon [img]="CircleAlert" aria-hidden="true" />
-                <span>Nem sikerült elkészíteni a tervet. Próbáld újra.</span>
-              </div>
-            } @else if (status === 'done') {
-              <div class="cx-alert cx-alert--success" role="status">
-                <lucide-icon [img]="CircleCheck" aria-hidden="true" />
-                <span>Elkészült a terved: {{ workoutDays() }} edzésnap a héten.</span>
+                <span>{{ state.errorMessage() }}</span>
               </div>
             }
           }
@@ -74,7 +69,7 @@
           <button
             type="button"
             class="cx-btn cx-btn--primary"
-            [disabled]="!state.canGoNext() || status === 'done'"
+            [disabled]="!state.canGoNext()"
             (click)="state.submit()"
           >
             {{ status === 'submitting' ? 'Terv készítése…' : 'Terv generálása' }}
