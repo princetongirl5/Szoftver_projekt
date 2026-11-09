@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { ArrowRight, CircleAlert, CircleCheck, LucideAngularModule } from 'lucide-angular';
+import { ArrowRight, CircleAlert, LucideAngularModule } from 'lucide-angular';
 
 import { EquipmentService } from '../../core/services/equipment.service';
 import { Logo } from '../../shared/components/logo/logo';
@@ -42,11 +42,7 @@ export class PlanWizard {
   );
 
   protected readonly stepCopy = computed(() => STEPS[this.state.step() - 1]);
-  protected readonly workoutDays = computed(
-    () => this.state.plan()?.days.filter((d) => d.workoutName !== null).length ?? 0,
-  );
 
   protected readonly ArrowRight = ArrowRight;
   protected readonly CircleAlert = CircleAlert;
-  protected readonly CircleCheck = CircleCheck;
 }

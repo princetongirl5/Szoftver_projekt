@@ -9,7 +9,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { MockPlanService } from './core/services/mock-plan.service';
+import { HttpPlanService } from './core/services/http-plan.service';
 import { PlanService } from './core/services/plan.service';
 import { ThemeService } from './core/services/theme.service';
 
@@ -22,7 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       inject(ThemeService);
     }),
-    // Mock or real backend: swap MockPlanService for HttpPlanService here.
-    { provide: PlanService, useClass: MockPlanService },
+    // Real backend; swap in MockPlanService to run the frontend without it.
+    { provide: PlanService, useClass: HttpPlanService },
   ],
 };

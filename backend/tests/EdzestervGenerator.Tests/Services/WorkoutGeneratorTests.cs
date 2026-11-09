@@ -35,9 +35,52 @@ public sealed class WorkoutGeneratorTests
     public void Returns_selected_days_in_monday_first_order()
     {
         var result = Generate(TrainingLocation.Home, [], Catalogue(), days: [DayOfWeek.Monday, DayOfWeek.Thursday]);
-        Assert.Equal(2, result.Count);
+        Assert.Equal(7, result.Count);
         Assert.Equal(DayOfWeek.Monday, result[0].Day);
-        Assert.Equal(DayOfWeek.Thursday, result[1].Day);
+        Assert.Equal(DayOfWeek.Thursday, result[3].Day);
+        Assert.Equal(2, result.Count(d => d.Name is not null));
+        Assert.Equal(5, result.Count(d => d.Name is null));
+    }
+
+    [Fact]
+    public void Six_training_days_produce_one_rest_day_and_alternate_upper_and_lower_body()
+    {
+        var result = Generate(TrainingLocation.Home, [], Catalogue(), days:
+        [
+            DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+            DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday
+        ]);
+
+        Assert.Equal(7, result.Count);
+        Assert.Single(result.Where(d => d.Name is null));
+        Assert.Equal(
+            new string?[] { "Felsőtest", "Alsótest", "Felsőtest", "Alsótest", "Felsőtest", "Alsótest" },
+            result.Where(d => d.Name is not null).Select(d => d.Name));
+        Assert.Equal(DayOfWeek.Sunday, result[^1].Day);
+        Assert.Empty(result[^1].Exercises);
+    }
+
+    [Fact]
+    public void Rest_days_are_empty_and_have_no_workout_name()
+    {
+        var result = Generate(TrainingLocation.Home, [], Catalogue(), days: [DayOfWeek.Monday, DayOfWeek.Thursday]);
+
+        Assert.All(result.Where(d => d.Name is null), day => Assert.Empty(day.Exercises));
+    }
+
+    [Fact]
+    public void Upper_and_lower_days_include_exercises_for_the_named_body_area()
+    {
+        var result = Generate(TrainingLocation.Home, [], Catalogue(), days:
+        [
+            DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday,
+            DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday
+        ]);
+
+        Assert.All(result.Where(d => d.Name == "Felsőtest"), day =>
+            Assert.True(day.Exercises.Count(e => e.Exercise.MuscleGroup == MuscleGroup.UpperBody) >= 2));
+        Assert.All(result.Where(d => d.Name == "Alsótest"), day =>
+            Assert.True(day.Exercises.Count(e => e.Exercise.MuscleGroup == MuscleGroup.LowerBody) >= 2));
     }
 
     [Fact]
@@ -48,13 +91,30 @@ public sealed class WorkoutGeneratorTests
     }
 
     [Fact]
-    public void Goal_sets_expected_repetition_range()
-    {
-        var strength = Generate(TrainingLocation.Home, [], Catalogue(), goal: TrainingGoal.Strength);
-        var endurance = Generate(TrainingLocation.Home, [], Catalogue(), goal: TrainingGoal.Endurance);
-        Assert.All(strength.SelectMany(d => d.Exercises), e => Assert.Equal(5, e.Reps));
-        Assert.All(endurance.SelectMany(d => d.Exercises), e => Assert.Equal(18, e.Reps));
-    }
+public void Goal_sets_expected_repetition_range()
+{
+    var strength = Generate(
+        TrainingLocation.Home, [], Catalogue(),
+        goal: TrainingGoal.Strength);
+
+    var endurance = Generate(
+        TrainingLocation.Home, [], Catalogue(),
+        goal: TrainingGoal.Endurance);
+
+    var strengthExercises = strength.SelectMany(d => d.Exercises).ToList();
+
+    Assert.All(
+        strengthExercises.Where(e => e.Exercise.MuscleGroup != MuscleGroup.Mobility),
+        e => Assert.Equal(5, e.Reps));
+
+    Assert.All(
+        strengthExercises.Where(e => e.Exercise.MuscleGroup == MuscleGroup.Mobility),
+        e => Assert.True(e.Reps >= 12));
+
+    Assert.All(
+        endurance.SelectMany(d => d.Exercises),
+        e => Assert.Equal(18, e.Reps));
+}
 
     [Fact]
     public void Difficulty_excludes_exercises_above_requested_level()
