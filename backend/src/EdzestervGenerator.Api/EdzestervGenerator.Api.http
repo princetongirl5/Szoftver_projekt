@@ -57,3 +57,6 @@ Content-Type: application/json
 
 ### Delete a calendar entry
 DELETE {{EdzestervGenerator.Api_HostAddress}}/api/workouts/1
+
+### Stats for the last 12 weeks (leave out weeks for all weeks)
+GET {{EdzestervGenerator.Api_HostAddress}}/api/stats?weeks=12
