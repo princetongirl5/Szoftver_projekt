@@ -9,6 +9,15 @@ public enum MuscleGroup
     FullBody
 }
 
+// Where a piece of equipment is typically available.
+// Home = can be owned at home (shown as a chip in the home-equipment step).
+// Gym = gym-only, only used when the training location is Gym.
+public enum EquipmentLocation
+{
+    Home,
+    Gym
+}
+
 public enum Difficulty
 {
     Easy,
