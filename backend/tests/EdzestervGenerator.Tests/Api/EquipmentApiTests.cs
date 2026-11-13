@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using EdzestervGenerator.Api.DTOs;
+using EdzestervGenerator.Api.Models;
 
 namespace EdzestervGenerator.Tests.Api;
 
@@ -17,6 +18,15 @@ public sealed class EquipmentApiTests(ApiFactory factory)
         Assert.Equal(Enumerable.Range(1, 12), items!.Select(e => e.Id));
         Assert.Equal("Kézisúlyzó", items[0].Name);
         Assert.Equal("Rúd", items[7].Name);
+    }
+
+    [Fact]
+    public async Task Items_1_to_7_are_home_and_8_to_12_are_gym()
+    {
+        var items = await _client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment", ApiFactory.Json);
+
+        Assert.All(items!.Where(e => e.Id <= 7), e => Assert.Equal(EquipmentLocation.Home, e.Location));
+        Assert.All(items!.Where(e => e.Id >= 8), e => Assert.Equal(EquipmentLocation.Gym, e.Location));
     }
 
     [Fact]

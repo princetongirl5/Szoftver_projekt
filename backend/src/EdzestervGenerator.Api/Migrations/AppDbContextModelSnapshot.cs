@@ -23,7 +23,14 @@ namespace EdzestervGenerator.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("Location")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NameEn")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -35,62 +42,86 @@ namespace EdzestervGenerator.Api.Migrations
                         new
                         {
                             Id = 1,
-                            Name = "Kézisúlyzó"
+                            Location = 0,
+                            Name = "Kézisúlyzó",
+                            NameEn = "Dumbbell"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Kettlebell"
+                            Location = 0,
+                            Name = "Kettlebell",
+                            NameEn = "Kettlebell"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "Húzódzkodó rúd"
+                            Location = 0,
+                            Name = "Húzódzkodó rúd",
+                            NameEn = "Pull-up bar"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "Gumiszalag"
+                            Location = 0,
+                            Name = "Gumiszalag",
+                            NameEn = "Resistance band"
                         },
                         new
                         {
                             Id = 5,
-                            Name = "Szőnyeg"
+                            Location = 0,
+                            Name = "Szőnyeg",
+                            NameEn = "Mat"
                         },
                         new
                         {
                             Id = 6,
-                            Name = "Pad"
+                            Location = 0,
+                            Name = "Pad",
+                            NameEn = "Bench"
                         },
                         new
                         {
                             Id = 7,
-                            Name = "Ugrálókötél"
+                            Location = 0,
+                            Name = "Ugrálókötél",
+                            NameEn = "Jump rope"
                         },
                         new
                         {
                             Id = 8,
-                            Name = "Rúd"
+                            Location = 1,
+                            Name = "Rúd",
+                            NameEn = "Barbell"
                         },
                         new
                         {
                             Id = 9,
-                            Name = "SZ-rúd"
+                            Location = 1,
+                            Name = "SZ-rúd",
+                            NameEn = "EZ bar"
                         },
                         new
                         {
                             Id = 10,
-                            Name = "Ferde pad"
+                            Location = 1,
+                            Name = "Ferde pad",
+                            NameEn = "Incline bench"
                         },
                         new
                         {
                             Id = 11,
-                            Name = "Kábelgép"
+                            Location = 1,
+                            Name = "Kábelgép",
+                            NameEn = "Cable machine"
                         },
                         new
                         {
                             Id = 12,
-                            Name = "Fitneszlabda"
+                            Location = 1,
+                            Name = "Fitneszlabda",
+                            NameEn = "Exercise ball"
                         });
                 });
 
@@ -113,6 +144,10 @@ namespace EdzestervGenerator.Api.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NameEn")
                         .IsRequired()
                         .HasColumnType("TEXT");
 

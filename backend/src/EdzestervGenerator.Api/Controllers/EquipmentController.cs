@@ -14,7 +14,7 @@ public class EquipmentController(AppDbContext db) : ControllerBase
     {
         return await db.Equipment
             .OrderBy(e => e.Id)
-            .Select(e => new EquipmentDto(e.Id, e.Name))
+            .Select(e => new EquipmentDto(e.Id, e.Name, e.Location))
             .ToListAsync();
     }
 }
