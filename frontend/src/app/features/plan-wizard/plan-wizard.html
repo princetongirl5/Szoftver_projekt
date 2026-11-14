@@ -1,6 +1,6 @@
 <header class="cx-topnav">
   <app-logo />
-  <button type="button" class="cx-btn cx-btn--ghost" (click)="state.reset()">Kilépés</button>
+  <button type="button" class="cx-btn cx-btn--ghost" (click)="state.leave()">Kilépés</button>
 </header>
 
 <main class="body">
@@ -61,7 +61,7 @@
 
       <div class="question__footer">
         @if (step === 1) {
-          <button type="button" class="cx-btn cx-btn--ghost" (click)="state.reset()">Mégse</button>
+          <button type="button" class="cx-btn cx-btn--ghost" (click)="state.leave()">Mégse</button>
         } @else {
           <button type="button" class="cx-btn cx-btn--ghost" (click)="state.back()">Vissza</button>
         }

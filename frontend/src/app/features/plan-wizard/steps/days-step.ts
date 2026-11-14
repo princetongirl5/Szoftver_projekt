@@ -29,6 +29,19 @@ import { DAYS, splitLabel } from '../wizard-options';
       font: 500 14px/20px var(--font-sans);
       color: var(--accent-text);
     }
+    /* Phone: full day names do not fit seven in a row. */
+    @media (max-width: 767.98px) {
+      .days {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .days .cx-chip {
+        min-height: 48px;
+      }
+      .summary {
+        flex-direction: column;
+        gap: 0;
+      }
+    }
   `,
   template: `
     <div class="days">

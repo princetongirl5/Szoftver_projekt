@@ -103,7 +103,18 @@ export class WizardStateService {
     this.step.set(step);
   }
 
-  /** Start over: "Mégse" and "Kilépés" until there is a page to leave to. */
+  /**
+   * "Mégse" and "Kilépés": back to this week's plan if there is one,
+   * otherwise start over (404, or the backend is not reachable).
+   */
+  leave(): void {
+    this.planService.getCurrentWeek().subscribe({
+      next: () => this.router.navigateByUrl('/week'),
+      error: () => this.reset(),
+    });
+  }
+
+  /** Start over with empty answers on step 1. */
   reset(): void {
     this.step.set(1);
     this.answers.set(EMPTY_ANSWERS);
