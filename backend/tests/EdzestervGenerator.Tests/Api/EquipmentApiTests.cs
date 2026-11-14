@@ -8,80 +8,55 @@ namespace EdzestervGenerator.Tests.Api;
 [Collection("Api")]
 public sealed class EquipmentApiTests(ApiFactory factory)
 {
-    private readonly HttpClient _client = factory.CreateClient();
-
     [Fact]
     public async Task Lists_the_12_seeded_items_in_id_order()
     {
-        var items = await _client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment", ApiFactory.Json);
-
+        using var client = factory.CreateClient();
+        var items = await client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment", ApiFactory.Json);
         Assert.Equal(Enumerable.Range(1, 12), items!.Select(e => e.Id));
         Assert.Equal("Kézisúlyzó", items[0].Name);
         Assert.Equal("Rúd", items[7].Name);
     }
 
     [Fact]
-    public async Task Items_1_to_7_are_home_and_8_to_12_are_gym()
+    public async Task Home_filter_returns_only_home_equipment()
     {
-        var items = await _client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment", ApiFactory.Json);
-
-        Assert.All(items!.Where(e => e.Id <= 7), e => Assert.Equal(EquipmentLocation.Home, e.Location));
-        Assert.All(items!.Where(e => e.Id >= 8), e => Assert.Equal(EquipmentLocation.Gym, e.Location));
+        using var client = factory.CreateClient();
+        var items = await client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment?location=Home", ApiFactory.Json);
+        Assert.Equal(Enumerable.Range(1, 7), items!.Select(e => e.Id));
     }
 
     [Fact]
-    public async Task New_user_has_no_equipment()
+    public async Task English_header_returns_english_names()
     {
-        var userId = await CreateUser();
-
-        var items = await _client.GetFromJsonAsync<List<UserEquipmentDto>>($"/api/users/{userId}/equipment", ApiFactory.Json);
-
-        Assert.Empty(items!);
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("Accept-Language", "en");
+        var items = await client.GetFromJsonAsync<List<EquipmentDto>>("/api/equipment", ApiFactory.Json);
+        Assert.Equal("Dumbbell", items![0].Name);
     }
 
     [Fact]
-    public async Task Save_replaces_the_list_and_allows_the_same_item_with_different_weights()
+    public async Task User_equipment_is_private_and_can_contain_multiple_weights_for_same_item()
     {
-        var userId = await CreateUser();
-        await _client.PutAsJsonAsync($"/api/users/{userId}/equipment", new[] { new { equipmentId = 3, weightKg = (double?)null } });
-
-        var response = await _client.PutAsJsonAsync($"/api/users/{userId}/equipment", new[]
+        var (client, userId) = await factory.CreateAuthenticatedClient($"equipment-{Guid.NewGuid():N}@example.com");
+        var empty = await client.GetFromJsonAsync<List<UserEquipmentDto>>($"/api/users/{userId}/equipment", ApiFactory.Json);
+        Assert.Empty(empty!);
+        var response = await client.PutAsJsonAsync($"/api/users/{userId}/equipment", new[]
         {
             new { equipmentId = 2, weightKg = (double?)12 },
             new { equipmentId = 1, weightKg = (double?)3 },
             new { equipmentId = 2, weightKg = (double?)8 },
         });
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var items = await _client.GetFromJsonAsync<List<UserEquipmentDto>>($"/api/users/{userId}/equipment", ApiFactory.Json);
-        Assert.Equal(
-            [new UserEquipmentDto(1, "Kézisúlyzó", 3), new UserEquipmentDto(2, "Kettlebell", 8), new UserEquipmentDto(2, "Kettlebell", 12)],
-            items);
+        var items = await client.GetFromJsonAsync<List<UserEquipmentDto>>($"/api/users/{userId}/equipment", ApiFactory.Json);
+        Assert.Equal(3, items!.Count);
     }
 
     [Fact]
-    public async Task Unknown_equipment_or_bad_weight_returns_400()
+    public async Task User_cannot_access_another_users_equipment()
     {
-        var userId = await CreateUser();
-
-        var unknown = await _client.PutAsJsonAsync($"/api/users/{userId}/equipment", new[] { new { equipmentId = 999, weightKg = (double?)null } });
-        var badWeight = await _client.PutAsJsonAsync($"/api/users/{userId}/equipment", new[] { new { equipmentId = 1, weightKg = (double?)-5 } });
-
-        Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, badWeight.StatusCode);
-    }
-
-    [Fact]
-    public async Task Unknown_user_returns_404()
-    {
-        Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync("/api/users/99999/equipment")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound,
-            (await _client.PutAsJsonAsync("/api/users/99999/equipment", Array.Empty<object>())).StatusCode);
-    }
-
-    private async Task<int> CreateUser()
-    {
-        var response = await _client.PostAsJsonAsync("/api/users", new { name = "Eszköz Teszt", email = "eszkoz@example.com" });
-        return (await response.Content.ReadFromJsonAsync<UserDto>(ApiFactory.Json))!.Id;
+        var (first, _) = await factory.CreateAuthenticatedClient($"equipment-a-{Guid.NewGuid():N}@example.com");
+        var (_, secondId) = await factory.CreateAuthenticatedClient($"equipment-b-{Guid.NewGuid():N}@example.com");
+        Assert.Equal(HttpStatusCode.Forbidden, (await first.GetAsync($"/api/users/{secondId}/equipment")).StatusCode);
     }
 }

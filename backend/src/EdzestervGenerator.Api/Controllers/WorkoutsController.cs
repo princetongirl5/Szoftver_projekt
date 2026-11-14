@@ -1,98 +1,55 @@
 using EdzestervGenerator.Api.Data;
 using EdzestervGenerator.Api.DTOs;
 using EdzestervGenerator.Api.Models;
+using EdzestervGenerator.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdzestervGenerator.Api.Controllers;
 
-// Calendar entries of a user.
-[ApiController]
-[Route("api")]
-public class WorkoutsController(AppDbContext db) : ControllerBase
+[ApiController, Authorize, Route("api")]
+public sealed class WorkoutsController(AppDbContext db) : ControllerBase
 {
-    // from and to are optional, to is exclusive: October = ?from=2026-10-01&to=2026-11-01
-    [HttpGet("users/{userId}/workouts")]
-    public async Task<ActionResult<List<WorkoutDto>>> GetAll(int userId, DateTime? from, DateTime? to)
+    [HttpGet("users/{userId:int}/workouts")]
+    public async Task<ActionResult<List<WorkoutDto>>> GetAll(int userId, DateTime? from, DateTime? to, CancellationToken cancellationToken)
     {
-        if (!await db.Users.AnyAsync(u => u.Id == userId))
-        {
-            return NotFound();
-        }
-
-        var query = db.Workouts.Where(w => w.UserId == userId);
-        if (from != null)
-        {
-            var fromUtc = ToUtc(from.Value);
-            query = query.Where(w => w.Date >= fromUtc);
-        }
-        if (to != null)
-        {
-            var toUtc = ToUtc(to.Value);
-            query = query.Where(w => w.Date < toUtc);
-        }
-
-        var workouts = await query.OrderBy(w => w.Date).ToListAsync();
+        var current = RequestUser.Id(User);
+        if (current is null) return Unauthorized();
+        if (current != userId) return Forbid();
+        var query = db.Workouts.Where(w => w.UserId == current);
+        if (from.HasValue) query = query.Where(w => w.Date >= ToUtc(from.Value));
+        if (to.HasValue) query = query.Where(w => w.Date < ToUtc(to.Value));
+        var workouts = await query.OrderBy(w => w.Date).ToListAsync(cancellationToken);
         return workouts.Select(ToDto).ToList();
     }
 
-    [HttpPost("users/{userId}/workouts")]
-    public async Task<ActionResult<WorkoutDto>> Create(int userId, CreateWorkoutRequest request)
+    [HttpPost("users/{userId:int}/workouts")]
+    public async Task<ActionResult<WorkoutDto>> Create(int userId, CreateWorkoutRequest request, CancellationToken cancellationToken)
     {
-        if (!await db.Users.AnyAsync(u => u.Id == userId))
-        {
-            return NotFound();
-        }
-
-        // Generated workouts are created by the generator, not from the calendar.
-        if (request.Activity == Activity.Generated)
-        {
-            ModelState.AddModelError("activity", "Generated workouts cannot be added from the calendar.");
-            return ValidationProblem();
-        }
-
-        var workout = new Workout
-        {
-            UserId = userId,
-            Date = ToUtc(request.Date),
-            Activity = request.Activity,
-            DurationMinutes = request.DurationMinutes,
-            Intensity = request.Intensity,
-            Note = request.Note
-        };
-
+        var current = RequestUser.Id(User);
+        if (current is null) return Unauthorized();
+        if (current != userId) return Forbid();
+        if (request.Activity == Activity.Generated) { ModelState.AddModelError("activity", "Generated workouts cannot be added from the calendar."); return ValidationProblem(); }
+        var workout = new Workout { UserId = current.Value, Date = ToUtc(request.Date), Activity = request.Activity,
+            DurationMinutes = request.DurationMinutes, Intensity = request.Intensity, Note = request.Note };
         db.Workouts.Add(workout);
-        await db.SaveChangesAsync();
-
+        await db.SaveChangesAsync(cancellationToken);
         return StatusCode(StatusCodes.Status201Created, ToDto(workout));
     }
 
-    [HttpDelete("workouts/{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("workouts/{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var workout = await db.Workouts.FindAsync(id);
-        if (workout == null)
-        {
-            return NotFound();
-        }
-
+        var current = RequestUser.Id(User);
+        if (current is null) return Unauthorized();
+        var workout = await db.Workouts.FirstOrDefaultAsync(w => w.Id == id && w.UserId == current && w.Activity != Activity.Generated, cancellationToken);
+        if (workout is null) return NotFound();
         db.Workouts.Remove(workout);
-        await db.SaveChangesAsync();
-
+        await db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
 
-    // Dates without a time zone are treated as UTC, others are converted to UTC.
-    private static DateTime ToUtc(DateTime date) =>
-        date.Kind == DateTimeKind.Unspecified
-            ? DateTime.SpecifyKind(date, DateTimeKind.Utc)
-            : date.ToUniversalTime();
-
-    private static WorkoutDto ToDto(Workout workout) =>
-        new(workout.Id,
-            DateTime.SpecifyKind(workout.Date, DateTimeKind.Utc),
-            workout.Activity,
-            workout.DurationMinutes,
-            workout.Intensity,
-            workout.Note);
+    private static DateTime ToUtc(DateTime date) => date.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(date, DateTimeKind.Utc) : date.ToUniversalTime();
+    private static WorkoutDto ToDto(Workout workout) => new(workout.Id, DateTime.SpecifyKind(workout.Date, DateTimeKind.Utc), workout.Activity, workout.DurationMinutes, workout.Intensity, workout.Note);
 }

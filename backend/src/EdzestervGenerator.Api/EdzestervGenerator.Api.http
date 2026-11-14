@@ -1,62 +1,51 @@
-@EdzestervGenerator.Api_HostAddress = http://localhost:5013
+@baseUrl = https://localhost:7001
+@email = demo@example.com
+@password = DemoPassword123
 
-### List users
-GET {{EdzestervGenerator.Api_HostAddress}}/api/users
-
-### Get one user
-GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1
-
-### Create a user
-POST {{EdzestervGenerator.Api_HostAddress}}/api/users
+### Register (run once)
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### Login (cookie support required in the HTTP client)
+POST {{baseUrl}}/api/auth/login?useCookies=true
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### Current account
+GET {{baseUrl}}/api/auth/manage/info
+
+### Equipment in English
+GET {{baseUrl}}/api/equipment
+Accept-Language: en
+
+### Generate plan
+POST {{baseUrl}}/api/plans/generate
+Content-Type: application/json
+Accept-Language: hu
 
 {
-  "name": "Teszt Elek",
-  "email": "teszt.elek@example.com"
+  "goal": "Hypertrophy",
+  "location": "Home",
+  "equipmentIds": [1, 3, 4, 5],
+  "days": ["Monday", "Wednesday", "Friday"],
+  "sessionMinutes": 60,
+  "difficulty": "Medium"
 }
 
-### Update a user
-PUT {{EdzestervGenerator.Api_HostAddress}}/api/users/1
-Content-Type: application/json
+### Current plan
+GET {{baseUrl}}/api/plans/current
 
-{
-  "name": "Teszt Elek",
-  "email": "elek@example.com"
-}
+### Saved preferences
+GET {{baseUrl}}/api/plans/preferences
 
-### List all equipment
-GET {{EdzestervGenerator.Api_HostAddress}}/api/equipment
+### Exercise statistics
+GET {{baseUrl}}/api/stats/exercises
 
-### Get the equipment a user has at home
-GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
+### Weekly statistics
+GET {{baseUrl}}/api/stats?weeks=4
 
-### Save the equipment a user has at home (replaces the whole list)
-PUT {{EdzestervGenerator.Api_HostAddress}}/api/users/1/equipment
-Content-Type: application/json
-
-[
-  { "equipmentId": 1, "weightKg": 3 },
-  { "equipmentId": 2, "weightKg": 8 },
-  { "equipmentId": 7, "weightKg": null }
-]
-
-### Get the calendar of a user for October (to is exclusive)
-GET {{EdzestervGenerator.Api_HostAddress}}/api/users/1/workouts?from=2026-10-01&to=2026-11-01
-
-### Add an external activity to the calendar
-POST {{EdzestervGenerator.Api_HostAddress}}/api/users/1/workouts
-Content-Type: application/json
-
-{
-  "date": "2026-10-22T16:00:00Z",
-  "activity": "Football",
-  "durationMinutes": 90,
-  "intensity": "High",
-  "note": "Focimeccs"
-}
-
-### Delete a calendar entry
-DELETE {{EdzestervGenerator.Api_HostAddress}}/api/workouts/1
-
-### Stats for the last 12 weeks (leave out weeks for all weeks)
-GET {{EdzestervGenerator.Api_HostAddress}}/api/stats?weeks=12
+### Logout
+POST {{baseUrl}}/api/auth/logout
