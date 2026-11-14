@@ -2,186 +2,153 @@ using EdzestervGenerator.Api.Data;
 using EdzestervGenerator.Api.DTOs;
 using EdzestervGenerator.Api.Models;
 using EdzestervGenerator.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdzestervGenerator.Api.Controllers;
 
-[ApiController]
-[Route("api/plans")]
+[ApiController, Authorize, Route("api/plans")]
 public sealed class PlansController(AppDbContext db, IWorkoutGenerator generator) : ControllerBase
 {
-    private const int DefaultUserId = 1;
-
     [HttpPost("generate")]
-    public async Task<ActionResult<WeekPlanDto>> Generate(GeneratePlanRequest request)
+    public async Task<ActionResult<WeekPlanDto>> Generate(GeneratePlanRequest request, CancellationToken cancellationToken)
     {
-        if (request.EquipmentIds is null)
-        {
-            ModelState.AddModelError("equipmentIds", "Az equipmentIds mező kötelező.");
-            return ValidationProblem();
-        }
-        if (request.Days is null || request.Days.Count is < 2 or > 6
-            || request.Days.Distinct().Count() != request.Days.Count
-            || request.Days.Any(day => !Enum.IsDefined(day)))
-        {
-            ModelState.AddModelError("days", "2 és 6 közötti, különböző napot válassz.");
-            return ValidationProblem();
-        }
+        var userId = RequestUser.Id(User);
+        if (userId is null) return Unauthorized();
+        if (request.EquipmentIds is null || request.EquipmentIds.Any(id => id <= 0))
+            return ValidationProblem("equipmentIds", LocalizationText.Validation("Érvénytelen eszközlista.", "Invalid equipment list."));
+        if (request.Days is null || request.Days.Count is < 2 or > 6 || request.Days.Distinct().Count() != request.Days.Count || request.Days.Any(day => !Enum.IsDefined(day)))
+            return ValidationProblem("days", LocalizationText.Validation("2 és 6 közötti, különböző napot válassz.", "Choose between 2 and 6 distinct days."));
         if (request.SessionMinutes is not (45 or 60 or 75 or 90))
-        {
-            ModelState.AddModelError("sessionMinutes", "Az edzés hossza 45, 60, 75 vagy 90 perc lehet.");
-            return ValidationProblem();
-        }
+            return ValidationProblem("sessionMinutes", LocalizationText.Validation("Az edzés hossza 45, 60, 75 vagy 90 perc lehet.", "Session duration must be 45, 60, 75 or 90 minutes."));
+        if (!Enum.IsDefined(request.Goal) || !Enum.IsDefined(request.Location) || !Enum.IsDefined(request.Difficulty))
+            return ValidationProblem("request", LocalizationText.Validation("A kérés érvénytelen értéket tartalmaz.", "The request contains an invalid value."));
 
         var requestedEquipment = request.EquipmentIds.Distinct().ToArray();
-        if (request.Location == TrainingLocation.Home)
-        {
-            var knownIds = await db.Equipment.Where(e => requestedEquipment.Contains(e.Id)).Select(e => e.Id).ToListAsync();
-            var unknownIds = requestedEquipment.Except(knownIds).ToArray();
-            if (unknownIds.Length > 0)
-            {
-                ModelState.AddModelError("equipmentIds", $"Ismeretlen eszközazonosító: {unknownIds[0]}.");
-                return ValidationProblem();
-            }
-        }
+        var equipment = await db.Equipment.Where(e => requestedEquipment.Contains(e.Id)).ToListAsync(cancellationToken);
+        if (equipment.Count != requestedEquipment.Length)
+            return ValidationProblem("equipmentIds", LocalizationText.Validation("Ismeretlen eszközazonosító.", "Unknown equipment ID."));
+        if (request.Location == TrainingLocation.Home && equipment.Any(e => e.Location != EquipmentLocation.Home))
+            return ValidationProblem("equipmentIds", LocalizationText.Validation("Otthoni tervhez csak otthoni eszköz választható.", "Only home equipment can be selected for a home plan."));
 
-        var exercises = await db.Exercises.AsNoTracking().ToListAsync();
-        var generated = generator.GenerateWeek(request, exercises, requestedEquipment, Random.Shared);
+        var exercises = await db.Exercises.AsNoTracking().ToListAsync(cancellationToken);
+        IReadOnlyList<GeneratedWorkoutDay> generated;
+        try { generated = generator.GenerateWeek(request, exercises, requestedEquipment, Random.Shared); }
+        catch (ArgumentException ex) { return ValidationProblem("request", ex.Message); }
         if (generated.All(d => d.Exercises.Count == 0))
-        {
-            ModelState.AddModelError("exercises", "A megadott feltételekkel nem található gyakorlat. Válassz több eszközt vagy enyhébb nehézséget.");
-            return ValidationProblem();
-        }
+            return ValidationProblem("exercises", LocalizationText.Validation("A megadott feltételekkel nem található gyakorlat.", "No exercises match the selected criteria."));
 
-        var (weekStartUtc, weekEndUtc, timeZone) = CurrentWeekUtc(DateTime.UtcNow);
-        var oldPlans = await db.Workouts
-            .Where(w => w.UserId == DefaultUserId && w.Activity == Activity.Generated && w.Date >= weekStartUtc && w.Date < weekEndUtc)
-            .ToListAsync();
+        var (weekStartUtc, weekEndUtc, zone) = CurrentWeekUtc(DateTime.UtcNow);
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        var oldPlans = await db.Workouts.Where(w => w.UserId == userId && w.Activity == Activity.Generated && w.Date >= weekStartUtc && w.Date < weekEndUtc).ToListAsync(cancellationToken);
         db.Workouts.RemoveRange(oldPlans);
 
         foreach (var day in generated.Where(day => day.Name is not null))
         {
-            var localDate = DateOnly.FromDateTime(LocalDateForDay(weekStartUtc, day.Day, timeZone));
-            var localMidnight = localDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
-            var dateUtc = TimeZoneInfo.ConvertTimeToUtc(localMidnight, timeZone);
-            var workout = new Workout
-            {
-                UserId = DefaultUserId,
-                Date = dateUtc,
-                Activity = Activity.Generated,
+            var localDate = DateOnly.FromDateTime(LocalDateForDay(weekStartUtc, day.Day, zone));
+            var dateUtc = TimeZoneInfo.ConvertTimeToUtc(localDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified), zone);
+            var workout = new Workout { UserId = userId.Value, Date = dateUtc, Activity = Activity.Generated,
                 DurationMinutes = request.SessionMinutes,
-                Intensity = request.Difficulty switch { Difficulty.Easy => Intensity.Low, Difficulty.Medium => Intensity.Medium, _ => Intensity.High }
-            };
+                Intensity = request.Difficulty switch { Difficulty.Easy => Intensity.Low, Difficulty.Medium => Intensity.Medium, _ => Intensity.High } };
             foreach (var (item, index) in day.Exercises.Select((e, i) => (e, i)))
-            {
-                workout.Exercises.Add(new WorkoutExercise
-                {
-                    ExerciseId = item.Exercise.Id,
-                    Order = index + 1,
-                    Sets = item.Sets,
-                    Reps = item.Reps,
-                    WeightKg = item.WeightKg,
-                    IsDone = false
-                });
-            }
+                workout.Exercises.Add(new WorkoutExercise { ExerciseId = item.Exercise.Id, Order = index + 1, Sets = item.Sets, Reps = item.Reps, WeightKg = item.WeightKg, IsDone = false });
             db.Workouts.Add(workout);
         }
 
-        if (!await db.Users.AnyAsync(u => u.Id == DefaultUserId))
+        var preference = await db.PlanPreferences.SingleOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+        if (preference is null)
         {
-            db.Users.Add(new User { Id = DefaultUserId, Name = "Alapértelmezett felhasználó", Email = "demo@local.invalid", CreatedAt = DateTime.UtcNow });
+            preference = new PlanPreference { UserId = userId.Value };
+            db.PlanPreferences.Add(preference);
         }
+        preference.Goal = request.Goal;
+        preference.Location = request.Location;
+        preference.EquipmentIds = requestedEquipment.ToList();
+        preference.Days = request.Days.Distinct().ToList();
+        preference.SessionMinutes = request.SessionMinutes;
+        preference.Difficulty = request.Difficulty;
+        preference.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetCurrent), null, await ReadCurrentPlan());
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return CreatedAtAction(nameof(GetCurrent), null, await ReadCurrentPlan(userId.Value, cancellationToken));
     }
 
     [HttpGet("current")]
-    public async Task<ActionResult<WeekPlanDto>> GetCurrent()
+    public async Task<ActionResult<WeekPlanDto>> GetCurrent(CancellationToken cancellationToken)
     {
-        var (fromUtc, toUtc, _) = CurrentWeekUtc(DateTime.UtcNow);
-        var workouts = await db.Workouts
-            .Where(w => w.UserId == DefaultUserId && w.Activity == Activity.Generated && w.Date >= fromUtc && w.Date < toUtc)
-            .Include(w => w.Exercises).ThenInclude(e => e.Exercise)
-            .OrderBy(w => w.Date).ToListAsync();
-        if (workouts.Count == 0) return NotFound();
+        var userId = RequestUser.Id(User);
+        if (userId is null) return Unauthorized();
+        var plan = await ReadCurrentPlan(userId.Value, cancellationToken);
+        if (plan.Days.All(d => d.Exercises.Count == 0)) return NotFound();
+        return Ok(plan);
+    }
 
-        var byDay = workouts.ToDictionary(w => ToBudapestDay(w.Date));
-        var result = Enum.GetValues<DayOfWeek>().OrderBy(WeekOrder).Select(day =>
-        {
-            if (!byDay.TryGetValue(day, out var workout)) return new PlanDayDto(day, null, []);
-            var exercises = workout.Exercises.OrderBy(e => e.Order)
-                .Select(e => new PlanExerciseDto(e.Id, e.Exercise.Name, e.Exercise.MuscleGroup.ToString(), e.Sets, e.Reps, e.WeightKg, e.IsDone)).ToArray();
-            var name = NameFrom(workout, exercises);
-            return new PlanDayDto(day, name, exercises);
-        }).ToArray();
-        return Ok(new WeekPlanDto(result));
+    [HttpGet("preferences")]
+    public async Task<ActionResult<GeneratePlanRequest>> GetPreferences(CancellationToken cancellationToken)
+    {
+        var userId = RequestUser.Id(User);
+        if (userId is null) return Unauthorized();
+        var p = await db.PlanPreferences.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+        return p is null ? NotFound() : Ok(new GeneratePlanRequest(p.Goal, p.Location, p.EquipmentIds, p.Days, p.SessionMinutes, p.Difficulty));
     }
 
     [HttpPatch("exercises/{id:int}")]
-    public async Task<IActionResult> MarkExercise(int id, UpdatePlanExerciseRequest request)
+    public async Task<IActionResult> MarkExercise(int id, UpdatePlanExerciseRequest request, CancellationToken cancellationToken)
     {
-        var item = await db.WorkoutExercises
-            .Include(e => e.Workout)
-            .FirstOrDefaultAsync(e => e.Id == id && e.Workout.UserId == DefaultUserId && e.Workout.Activity == Activity.Generated);
+        var userId = RequestUser.Id(User);
+        if (userId is null) return Unauthorized();
+        if (request.ActualReps is < 0 or > 1000 || request.ActualWeightKg is < 0 or > 2000)
+            return ValidationProblem("actualValues", LocalizationText.Validation("A tényleges ismétlés vagy súly érvénytelen.", "Actual reps or weight is out of range."));
+        var item = await db.WorkoutExercises.Include(e => e.Workout)
+            .FirstOrDefaultAsync(e => e.Id == id && e.Workout.UserId == userId && e.Workout.Activity == Activity.Generated, cancellationToken);
         if (item is null) return NotFound();
         item.IsDone = request.IsDone;
-        await db.SaveChangesAsync();
+        if (request.ActualReps.HasValue) item.ActualReps = request.ActualReps;
+        if (request.ActualWeightKg.HasValue) item.ActualWeightKg = request.ActualWeightKg;
+        await db.SaveChangesAsync(cancellationToken);
         return NoContent();
     }
 
-    private async Task<WeekPlanDto> ReadCurrentPlan()
+    private async Task<WeekPlanDto> ReadCurrentPlan(int userId, CancellationToken cancellationToken)
     {
         var (fromUtc, toUtc, _) = CurrentWeekUtc(DateTime.UtcNow);
-        var workouts = await db.Workouts
-            .Where(w => w.UserId == DefaultUserId && w.Activity == Activity.Generated && w.Date >= fromUtc && w.Date < toUtc)
-            .Include(w => w.Exercises).ThenInclude(e => e.Exercise)
-            .OrderBy(w => w.Date).ToListAsync();
+        var workouts = await db.Workouts.Where(w => w.UserId == userId && w.Activity == Activity.Generated && w.Date >= fromUtc && w.Date < toUtc)
+            .Include(w => w.Exercises).ThenInclude(e => e.Exercise).OrderBy(w => w.Date).ToListAsync(cancellationToken);
         var byDay = workouts.ToDictionary(w => ToBudapestDay(w.Date));
         var days = Enum.GetValues<DayOfWeek>().OrderBy(WeekOrder).Select(day =>
         {
             if (!byDay.TryGetValue(day, out var workout)) return new PlanDayDto(day, null, []);
-            var items = workout.Exercises.OrderBy(e => e.Order).Select(e => new PlanExerciseDto(e.Id, e.Exercise.Name,
-                e.Exercise.MuscleGroup.ToString(), e.Sets, e.Reps, e.WeightKg, e.IsDone)).ToArray();
-            return new PlanDayDto(day, NameFrom(workout, items), items);
+            var items = workout.Exercises.OrderBy(e => e.Order).Select(e => new PlanExerciseDto(e.Id,
+                LocalizationText.ExerciseName(e.Exercise.Name, e.Exercise.NameEn), e.Exercise.MuscleGroup.ToString(), e.Sets, e.Reps, e.WeightKg, e.IsDone, e.ActualReps, e.ActualWeightKg)).ToArray();
+            return new PlanDayDto(day, LocalizedWorkoutName(workout, items), items);
         }).ToArray();
         return new WeekPlanDto(days);
     }
 
-    private static string NameFrom(Workout workout, IReadOnlyList<PlanExerciseDto> exercises)
+    private static string LocalizedWorkoutName(Workout workout, IReadOnlyList<PlanExerciseDto> exercises)
     {
         var groups = exercises.Select(e => e.MuscleGroup).Distinct().ToArray();
-        if (groups.Contains(nameof(MuscleGroup.FullBody)) || (groups.Contains(nameof(MuscleGroup.UpperBody)) && groups.Contains(nameof(MuscleGroup.LowerBody)))) return "Teljes test";
-        if (groups.Contains(nameof(MuscleGroup.UpperBody))) return "Felsőtest";
-        if (groups.Contains(nameof(MuscleGroup.LowerBody))) return "Alsótest";
-        return "Edzés";
+        var hu = groups.Contains(nameof(MuscleGroup.FullBody)) || (groups.Contains(nameof(MuscleGroup.UpperBody)) && groups.Contains(nameof(MuscleGroup.LowerBody))) ? "Teljes test" :
+            groups.Contains(nameof(MuscleGroup.UpperBody)) ? "Felsőtest" : groups.Contains(nameof(MuscleGroup.LowerBody)) ? "Alsótest" : "Edzés";
+        return LocalizationText.WorkoutName(hu);
     }
-
     private static (DateTime StartUtc, DateTime EndUtc, TimeZoneInfo Zone) CurrentWeekUtc(DateTime nowUtc)
     {
-        TimeZoneInfo zone;
-        try { zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Budapest"); }
-        catch (TimeZoneNotFoundException) { zone = TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"); }
+        var zone = BudapestTimeZone();
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(nowUtc, DateTimeKind.Utc), zone);
         var monday = DateOnly.FromDateTime(localNow).AddDays(-WeekOrder(localNow.DayOfWeek));
-        var startLocal = monday.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
-        var endLocal = monday.AddDays(7).ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
-        return (TimeZoneInfo.ConvertTimeToUtc(startLocal, zone), TimeZoneInfo.ConvertTimeToUtc(endLocal, zone), zone);
+        return (TimeZoneInfo.ConvertTimeToUtc(monday.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified), zone),
+            TimeZoneInfo.ConvertTimeToUtc(monday.AddDays(7).ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified), zone), zone);
     }
-
-    private static DateTime LocalDateForDay(DateTime weekStartUtc, DayOfWeek day, TimeZoneInfo zone)
+    private static DateTime LocalDateForDay(DateTime weekStartUtc, DayOfWeek day, TimeZoneInfo zone) => TimeZoneInfo.ConvertTimeFromUtc(weekStartUtc, zone).Date.AddDays(WeekOrder(day));
+    private static DayOfWeek ToBudapestDay(DateTime utc) => TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), BudapestTimeZone()).DayOfWeek;
+    private static TimeZoneInfo BudapestTimeZone()
     {
-        var mondayLocal = TimeZoneInfo.ConvertTimeFromUtc(weekStartUtc, zone).Date;
-        return mondayLocal.AddDays(WeekOrder(day));
-    }
-
-    private static DayOfWeek ToBudapestDay(DateTime utc)
-    {
-        TimeZoneInfo zone;
-        try { zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Budapest"); }
-        catch (TimeZoneNotFoundException) { zone = TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"); }
-        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), zone).DayOfWeek;
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Europe/Budapest"); }
+        catch (TimeZoneNotFoundException) { return TimeZoneInfo.FindSystemTimeZoneById("Central Europe Standard Time"); }
     }
     private static int WeekOrder(DayOfWeek day) => ((int)day + 6) % 7;
+    private ActionResult ValidationProblem(string key, string message) { ModelState.AddModelError(key, message); return ValidationProblem(ModelState); }
 }

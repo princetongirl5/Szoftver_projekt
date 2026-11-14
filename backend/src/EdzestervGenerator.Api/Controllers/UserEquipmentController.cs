@@ -1,71 +1,42 @@
 using EdzestervGenerator.Api.Data;
 using EdzestervGenerator.Api.DTOs;
 using EdzestervGenerator.Api.Models;
+using EdzestervGenerator.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdzestervGenerator.Api.Controllers;
 
-// The equipment a user has at home.
-[ApiController]
-[Route("api/users/{userId}/equipment")]
-public class UserEquipmentController(AppDbContext db) : ControllerBase
+[ApiController, Authorize, Route("api/users/{userId:int}/equipment")]
+public sealed class UserEquipmentController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<UserEquipmentDto>>> Get(int userId)
+    public async Task<ActionResult<List<UserEquipmentDto>>> Get(int userId, CancellationToken cancellationToken)
     {
-        if (!await db.Users.AnyAsync(u => u.Id == userId))
-        {
-            return NotFound();
-        }
-
-        return await GetItems(userId);
+        var current = RequestUser.Id(User);
+        if (current is null) return Unauthorized();
+        if (current != userId) return Forbid();
+        return await GetItems(current.Value, cancellationToken);
     }
 
-    // Replaces the whole list with the one sent by the frontend.
     [HttpPut]
-    public async Task<ActionResult<List<UserEquipmentDto>>> Save(int userId, List<SaveUserEquipmentItem> items)
+    public async Task<ActionResult<List<UserEquipmentDto>>> Save(int userId, List<SaveUserEquipmentItem> items, CancellationToken cancellationToken)
     {
-        if (!await db.Users.AnyAsync(u => u.Id == userId))
-        {
-            return NotFound();
-        }
-
-        var equipmentIds = await db.Equipment.Select(e => e.Id).ToListAsync();
+        var current = RequestUser.Id(User);
+        if (current is null) return Unauthorized();
+        if (current != userId) return Forbid();
+        var equipmentIds = await db.Equipment.Select(e => e.Id).ToListAsync(cancellationToken);
         foreach (var item in items)
-        {
-            if (!equipmentIds.Contains(item.EquipmentId))
-            {
-                ModelState.AddModelError("equipmentId", $"Unknown equipment id: {item.EquipmentId}");
-                return ValidationProblem();
-            }
-        }
-
-        var oldItems = await db.UserEquipment.Where(ue => ue.UserId == userId).ToListAsync();
+            if (!equipmentIds.Contains(item.EquipmentId)) { ModelState.AddModelError("equipmentId", "Unknown equipment id."); return ValidationProblem(); }
+        var oldItems = await db.UserEquipment.Where(ue => ue.UserId == current).ToListAsync(cancellationToken);
         db.UserEquipment.RemoveRange(oldItems);
-
-        foreach (var item in items)
-        {
-            db.UserEquipment.Add(new UserEquipment
-            {
-                UserId = userId,
-                EquipmentId = item.EquipmentId,
-                WeightKg = item.WeightKg
-            });
-        }
-
-        await db.SaveChangesAsync();
-
-        return await GetItems(userId);
+        db.UserEquipment.AddRange(items.Select(item => new UserEquipment { UserId = current.Value, EquipmentId = item.EquipmentId, WeightKg = item.WeightKg }));
+        await db.SaveChangesAsync(cancellationToken);
+        return await GetItems(current.Value, cancellationToken);
     }
 
-    private async Task<List<UserEquipmentDto>> GetItems(int userId)
-    {
-        return await db.UserEquipment
-            .Where(ue => ue.UserId == userId)
-            .OrderBy(ue => ue.EquipmentId)
-            .ThenBy(ue => ue.WeightKg)
-            .Select(ue => new UserEquipmentDto(ue.EquipmentId, ue.Equipment.Name, ue.WeightKg))
-            .ToListAsync();
-    }
+    private async Task<List<UserEquipmentDto>> GetItems(int userId, CancellationToken cancellationToken) =>
+        await db.UserEquipment.Where(ue => ue.UserId == userId).OrderBy(ue => ue.EquipmentId).ThenBy(ue => ue.WeightKg)
+            .Select(ue => new UserEquipmentDto(ue.EquipmentId, LocalizationText.IsEnglish ? ue.Equipment.NameEn : ue.Equipment.Name, ue.WeightKg)).ToListAsync(cancellationToken);
 }
