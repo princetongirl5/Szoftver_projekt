@@ -13,4 +13,6 @@ public class WorkoutExercise
     public int Reps { get; set; }
     public double? WeightKg { get; set; }
     public bool IsDone { get; set; }
+    public int? ActualReps { get; set; }
+    public double? ActualWeightKg { get; set; }
 }
