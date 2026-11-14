@@ -39,4 +39,12 @@ describe('TopNav', () => {
     expect(links[0].getAttribute('aria-current')).toBe('page');
     expect(links[1].hasAttribute('aria-current')).toBe(false);
   });
+
+  it('renders the same items in the bottom tab bar', async () => {
+    const harness = await RouterTestingHarness.create('/plan');
+    const tabs = [...harness.routeNativeElement!.querySelectorAll('a.cx-tab')];
+
+    expect(tabs.map((a) => a.textContent?.trim())).toEqual(['Tervezés', 'Heti terv']);
+    expect(tabs[0].getAttribute('aria-current')).toBe('page');
+  });
 });

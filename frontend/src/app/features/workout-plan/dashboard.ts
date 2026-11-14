@@ -1,10 +1,21 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
+  CalendarDays,
   Check,
   CircleAlert,
+  ClipboardList,
   Dumbbell,
   Image,
   LucideAngularModule,
@@ -53,8 +64,8 @@ export class Dashboard {
 
   // Statisztika joins the menu when its page exists.
   protected readonly navItems: NavItem[] = [
-    { label: 'Tervezés', path: '/plan' },
-    { label: 'Heti terv', path: '/week' },
+    { label: 'Tervezés', path: '/plan', icon: ClipboardList },
+    { label: 'Heti terv', path: '/week', icon: CalendarDays },
   ];
 
   protected readonly todayIndex = weekdayIndex(this.now);
@@ -112,6 +123,19 @@ export class Dashboard {
   protected readonly nextWorkout = computed(
     () => this.days().find((d) => d.index > this.todayIndex && !d.isRest) ?? null,
   );
+
+  private readonly strip = viewChild<ElementRef<HTMLElement>>('strip');
+
+  constructor() {
+    // On phones the strip scrolls sideways; start with today in view (a no-op when it fits).
+    afterRenderEffect(() => {
+      const strip = this.strip()?.nativeElement;
+      const today = strip?.querySelector<HTMLElement>('.cx-day--today');
+      if (!strip || !today) return;
+      strip.scrollLeft =
+        today.offsetLeft - strip.offsetLeft - (strip.clientWidth - today.offsetWidth) / 2;
+    });
+  }
 
   protected readonly Check = Check;
   protected readonly CircleAlert = CircleAlert;

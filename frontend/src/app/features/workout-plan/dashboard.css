@@ -1,9 +1,11 @@
-/* Desktop only for now, like the wizard (Figma reference: 1440 wide). */
+/* Figma reference: 1440 wide. Breakpoints: bp-lg 1024 px (one column),
+   bp-md 768 px (phone: bottom tab bar, scrolling week strip). */
 .body {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  width: 1120px;
+  --gutter: var(--space-6);
+  width: min(1120px, calc(100% - 2 * var(--gutter)));
   margin: 0 auto;
   padding: var(--space-12) 0;
 }
@@ -69,7 +71,7 @@ h1 {
 }
 
 .strip__skeleton {
-  height: 112px;
+  min-height: 112px;
   border-radius: var(--radius-md);
 }
 
@@ -227,4 +229,112 @@ h2.cx-card__title,
 .retry {
   margin-left: auto;
   min-height: 28px;
+}
+
+/* Tablet: the side cards move under the workout, side by side,
+   and the seven days scroll sideways, edge to edge. */
+@media (max-width: 1023.98px) {
+  .strip {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 0 var(--gutter);
+    scroll-padding: 0 var(--gutter);
+  }
+
+  .strip .cx-day,
+  .strip__skeleton {
+    flex: none;
+    width: 112px;
+    min-height: 104px;
+    scroll-snap-align: start;
+  }
+
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .side__map {
+    aspect-ratio: auto;
+    height: 200px;
+  }
+}
+
+/* Phone. */
+@media (max-width: 767.98px) {
+  .body {
+    --gutter: var(--space-4);
+    gap: var(--space-4);
+    padding: var(--space-6) 0;
+  }
+
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+  }
+
+  h1,
+  #workout-title {
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  .week-progress {
+    flex: 1;
+    width: auto;
+  }
+
+  .workout__media {
+    height: 160px;
+  }
+
+  .workout__body {
+    padding: var(--space-4);
+  }
+
+  .exercises .cx-row {
+    gap: var(--space-3);
+  }
+
+  /* A bigger tap target for the thumb. */
+  .exercises .cx-check {
+    width: 32px;
+    height: 32px;
+  }
+
+  .exercises .cx-media--thumb {
+    display: none;
+  }
+
+  .exercises .cx-row__nums {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+  }
+
+  .workout__footer .cx-btn {
+    flex: 1;
+  }
+
+  .side {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .side .cx-card {
+    padding: var(--space-4);
+  }
+
+  .side__map {
+    height: 160px;
+  }
 }
