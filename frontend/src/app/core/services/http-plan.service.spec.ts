@@ -51,6 +51,16 @@ describe('HttpPlanService', () => {
     expect(await result).toEqual(week);
   });
 
+  it('gets the saved answers', async () => {
+    const result = firstValueFrom(service.getPreferences());
+
+    const req = http.expectOne('/api/plans/preferences');
+    expect(req.request.method).toBe('GET');
+    req.flush({ goal: 'Strength' });
+
+    expect(await result).toEqual({ goal: 'Strength' });
+  });
+
   it('patches one exercise', async () => {
     const result = firstValueFrom(service.setExerciseDone(42, true));
 

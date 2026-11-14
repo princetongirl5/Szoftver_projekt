@@ -18,6 +18,11 @@ export class HttpPlanService extends PlanService {
     return this.http.get<WeekPlan>('/api/plans/current');
   }
 
+  /** 404 until the user has generated a plan. */
+  getPreferences(): Observable<GeneratePlanRequest> {
+    return this.http.get<GeneratePlanRequest>('/api/plans/preferences');
+  }
+
   setExerciseDone(exerciseId: number, isDone: boolean): Observable<void> {
     return this.http.patch<void>(`/api/plans/exercises/${exerciseId}`, { isDone });
   }

@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { Observable, of, throwError } from 'rxjs';
+import { EMPTY, Observable, of, throwError } from 'rxjs';
 
 import { GeneratePlanRequest, WeekPlan } from '../../core/models/plan';
 import { PlanService } from '../../core/services/plan.service';
@@ -15,14 +15,16 @@ describe('WizardStateService', () => {
   const setup = (
     result = of<WeekPlan>({ days: [] }),
     currentWeek: Observable<WeekPlan> = of({ days: [] }),
+    preferences: Observable<GeneratePlanRequest> = EMPTY,
   ) => {
     generate = vi.fn((_: GeneratePlanRequest) => result);
     const getCurrentWeek = vi.fn(() => currentWeek);
+    const getPreferences = vi.fn(() => preferences);
     TestBed.configureTestingModule({
       providers: [
         WizardStateService,
         provideRouter([]),
-        { provide: PlanService, useValue: { generate, getCurrentWeek } },
+        { provide: PlanService, useValue: { generate, getCurrentWeek, getPreferences } },
       ],
     });
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -162,6 +164,33 @@ describe('WizardStateService', () => {
     state.leave();
 
     expect(navigate).not.toHaveBeenCalled();
+    expect(state.step()).toBe(1);
+    expect(state.answers().goal).toBeNull();
+  });
+
+  it('starts on the review with the answers of the last plan', () => {
+    const saved: GeneratePlanRequest = {
+      goal: 'Endurance',
+      location: 'Home',
+      equipmentIds: [4],
+      days: ['Friday', 'Monday'],
+      sessionMinutes: 75,
+      difficulty: 'Hard',
+    };
+    setup(undefined, undefined, of(saved));
+
+    expect(state.step()).toBe(5);
+    expect(state.answers()).toEqual({ ...saved, days: ['Monday', 'Friday'] });
+    expect(state.canGoNext()).toBe(true);
+  });
+
+  it('starts empty when there are no saved answers', () => {
+    setup(
+      undefined,
+      undefined,
+      throwError(() => new HttpErrorResponse({ status: 404 })),
+    );
+
     expect(state.step()).toBe(1);
     expect(state.answers().goal).toBeNull();
   });

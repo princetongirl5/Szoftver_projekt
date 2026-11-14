@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, delay, of, throwError } from 'rxjs';
+import { EMPTY, Observable, delay, of, throwError } from 'rxjs';
 
 import { GeneratePlanRequest, PlanExercise, WeekPlan } from '../models/plan';
 import { PlanService } from './plan.service';
@@ -87,6 +87,11 @@ export class MockPlanService extends PlanService {
 
   getCurrentWeek(): Observable<WeekPlan> {
     return of(structuredClone(this.week)).pipe(delay(400));
+  }
+
+  // No saved answers: the wizard starts empty.
+  getPreferences(): Observable<GeneratePlanRequest> {
+    return EMPTY;
   }
 
   setExerciseDone(exerciseId: number, isDone: boolean): Observable<void> {
