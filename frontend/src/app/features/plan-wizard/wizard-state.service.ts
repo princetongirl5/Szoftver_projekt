@@ -51,6 +51,10 @@ export class WizardStateService {
   /** Shown on the review while status is 'error'. */
   readonly errorMessage = signal(GENERIC_ERROR);
 
+  constructor() {
+    this.prefill();
+  }
+
   /** Whether "Tovább" (or "Terv generálása" on the last step) is enabled. */
   readonly canGoNext = computed(
     () => this.isStepValid(this.step()) && this.status() !== 'submitting',
@@ -119,6 +123,25 @@ export class WizardStateService {
     this.step.set(1);
     this.answers.set(EMPTY_ANSWERS);
     this.status.set('idle');
+  }
+
+  /**
+   * Starts from the answers of the last plan, on the review, so a new plan is one click
+   * and any row still jumps back. No saved answers (404) leaves the wizard empty. A late
+   * response does not overwrite what the user has already started to answer.
+   */
+  private prefill(): void {
+    this.planService.getPreferences().subscribe({
+      next: (saved) => {
+        if (this.answers() !== EMPTY_ANSWERS || this.step() !== 1) return;
+        this.answers.set({
+          ...saved,
+          days: DAYS.map((d) => d.value).filter((d) => saved.days.includes(d)),
+        });
+        this.step.set(5);
+      },
+      error: () => {},
+    });
   }
 
   /** Sends the answers to PlanService, then opens the new week on the dashboard. */
