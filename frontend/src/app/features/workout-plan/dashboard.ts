@@ -13,6 +13,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {
   CalendarDays,
+  ChartColumn,
   Check,
   CircleAlert,
   ClipboardList,
@@ -62,10 +63,10 @@ export class Dashboard {
   private readonly planService = inject(PlanService);
   private readonly now = inject(NOW)();
 
-  // Statisztika joins the menu when its page exists.
   protected readonly navItems: NavItem[] = [
     { label: 'Tervezés', path: '/plan', icon: ClipboardList },
     { label: 'Heti terv', path: '/week', icon: CalendarDays },
+    { label: 'Statisztika', path: '/stats', icon: ChartColumn },
   ];
 
   protected readonly todayIndex = weekdayIndex(this.now);

@@ -1,0 +1,194 @@
+<app-top-nav [items]="navItems" />
+
+<main class="body">
+  <header class="head">
+    <div class="head__title">
+      <p class="cx-eyebrow">{{ range() }}</p>
+      <h1>Statisztika</h1>
+    </div>
+    <div class="cx-segmented" role="group" aria-label="Időszak">
+      @for (option of ranges; track option.label) {
+        <button
+          type="button"
+          [attr.aria-pressed]="weeks() === option.weeks"
+          (click)="weeks.set(option.weeks)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (stats.error()) {
+    <div class="cx-alert cx-alert--danger" role="alert">
+      <lucide-icon [img]="CircleAlert" aria-hidden="true" />
+      <span>Nem sikerült betölteni a statisztikát.</span>
+      <button type="button" class="cx-btn cx-btn--ghost retry" (click)="stats.reload()">
+        Újra
+      </button>
+    </div>
+  } @else if (!stats.hasValue()) {
+    <span
+      class="cx-skeleton main-skeleton"
+      aria-busy="true"
+      aria-label="Statisztika betöltése"
+    ></span>
+  } @else {
+    @let s = stats.value();
+    <div class="columns">
+      <section class="cx-card" aria-labelledby="log-title">
+        <h2 class="cx-card__title" id="log-title">Edzésnapló</h2>
+        <p class="cx-muted note">
+          Egy sor egy hét · {{ s.completedWorkouts }} / {{ s.plannedWorkouts }} edzés kész
+        </p>
+
+        @if (log().length) {
+          <div class="log" role="table" aria-label="Edzésnapló hetenként">
+            <div class="log__row log__row--head" role="row">
+              <span role="columnheader"><span class="sr-only">Hét</span></span>
+              @for (day of weekDays; track day.value) {
+                <span class="log__day" role="columnheader" [attr.aria-label]="day.label">{{
+                  day.short
+                }}</span>
+              }
+              <span role="columnheader"><span class="sr-only">Kész</span></span>
+            </div>
+            @for (week of log(); track week.label) {
+              <div class="log__row" role="row">
+                <span class="log__week" role="rowheader">{{ week.label }}</span>
+                @for (day of week.days; track $index) {
+                  <span
+                    [class]="'cell cell--' + day.status.toLowerCase()"
+                    role="cell"
+                    [attr.aria-label]="day.label"
+                    [attr.title]="day.label"
+                  ></span>
+                }
+                <span
+                  class="cx-num log__count"
+                  role="cell"
+                  [class.log__count--short]="week.completed < week.planned"
+                  >{{ week.planned ? week.completed + '/' + week.planned : '' }}</span
+                >
+              </div>
+            }
+          </div>
+          <ul class="legend">
+            <li><span class="cell cell--done"></span>Edzés kész</li>
+            <li><span class="cell cell--partial"></span>Hiányos edzés</li>
+            <li><span class="cell cell--missed"></span>Kimaradt</li>
+            <li><span class="cell cell--planned"></span>Tervezett</li>
+            <li><span class="cell cell--rest"></span>Pihenőnap</li>
+          </ul>
+        } @else {
+          <p class="cx-muted note">Még nincs egyetlen terved sem.</p>
+        }
+      </section>
+
+      <div class="side">
+        <div class="tiles">
+          <section class="cx-card cx-stat">
+            <span class="cx-eyebrow">Jelenlegi sorozat</span>
+            <span class="cx-stat__value">{{ s.currentStreakWeeks }} hét</span>
+            <span class="cx-muted tile__note">teljes hét egymás után</span>
+          </section>
+          <section class="cx-card cx-stat">
+            <span class="cx-eyebrow">Leghosszabb</span>
+            <span class="cx-stat__value">{{ s.longestStreakWeeks }} hét</span>
+            <span class="cx-muted tile__note">{{
+              s.longestStreakWeeks && s.longestStreakWeeks === s.currentStreakWeeks
+                ? 'ez a mostani'
+                : 'az eddigi legjobb'
+            }}</span>
+          </section>
+          <section class="cx-card cx-stat">
+            <span class="cx-eyebrow">Teljesítés</span>
+            <span class="cx-stat__value">{{ s.completionPercent }}%</span>
+            <span class="cx-muted tile__note"
+              >{{ s.completedWorkouts }} / {{ s.plannedWorkouts }} edzés</span
+            >
+          </section>
+        </div>
+
+        <section class="cx-card" aria-labelledby="exercise-title">
+          <h2 class="cx-card__title" id="exercise-title">Gyakorlatok</h2>
+          <p class="cx-muted note">Így alakult egy gyakorlat alkalomról alkalomra.</p>
+
+          @if (exercises.error()) {
+            <div class="cx-alert cx-alert--danger" role="alert">
+              <lucide-icon [img]="CircleAlert" aria-hidden="true" />
+              <span>Nem sikerült betölteni a gyakorlatokat.</span>
+            </div>
+          } @else if (exercises.hasValue() && !exerciseList().length) {
+            <div class="cx-empty">
+              <p class="cx-empty__title">Még nincs adat</p>
+              <p class="cx-empty__text">
+                Készíts egy tervet, és pipáld ki a gyakorlatokat a heti tervben.
+              </p>
+              <a class="cx-btn" routerLink="/week">Heti terv</a>
+            </div>
+          } @else if (exerciseList().length) {
+            <div class="cx-field picker">
+              <label for="exercise">Gyakorlat</label>
+              <select
+                id="exercise"
+                class="cx-input"
+                (change)="selectExercise($any($event.target).value)"
+              >
+                @for (e of exerciseList(); track e.exerciseId) {
+                  <option [value]="e.exerciseId" [selected]="e.exerciseId === selectedId()">
+                    {{ e.name }} ({{ e.timesDone }}/{{ e.timesPlanned }} kész)
+                  </option>
+                }
+              </select>
+            </div>
+
+            @let d = detail();
+            <div class="trend">
+              <div>
+                <span class="cx-stat__value"
+                  >{{ d.last ?? '0' }} <span class="trend__unit">{{ d.unit }}</span></span
+                >
+                <p class="cx-muted tile__note">
+                  {{ d.last ? 'a legutóbbi elvégzett alkalom' : 'még nincs elvégzett alkalom' }}
+                </p>
+              </div>
+              @if (d.spark; as spark) {
+                <svg
+                  class="spark"
+                  [attr.viewBox]="'0 0 ' + sparkWidth + ' ' + sparkHeight"
+                  [attr.width]="sparkWidth"
+                  [attr.height]="sparkHeight"
+                  aria-hidden="true"
+                >
+                  <polyline [attr.points]="spark.points" />
+                  <circle [attr.cx]="spark.last.x" [attr.cy]="spark.last.y" r="3.5" />
+                </svg>
+              }
+              @if (d.delta !== null) {
+                <span class="cx-stat__delta" [class.trend__delta--down]="d.delta < 0"
+                  >{{ d.delta > 0 ? '+' : '' }}{{ formatNumber(d.delta) }} {{ d.unit }}</span
+                >
+              }
+            </div>
+
+            <ul class="history">
+              @for (row of d.rows; track $index) {
+                <li class="history__row">
+                  <span class="history__date">{{ row.date }}</span>
+                  <span class="history__main">
+                    <span class="cx-num">{{ row.planned }}</span>
+                    @if (row.actual) {
+                      <span class="cx-muted history__actual">elvégezve: {{ row.actual }}</span>
+                    }
+                  </span>
+                  <span class="cx-badge" [class.cx-badge--done]="row.isDone">{{ row.status }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+    </div>
+  }
+</main>

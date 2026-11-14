@@ -14,6 +14,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/plan-wizard/plan-wizard').then((m) => m.PlanWizard),
   },
   {
+    path: 'stats',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/stats/stats-page').then((m) => m.StatsPage),
+  },
+  {
     path: 'week',
     canActivate: [authGuard],
     loadComponent: () => import('./features/workout-plan/dashboard').then((m) => m.Dashboard),
