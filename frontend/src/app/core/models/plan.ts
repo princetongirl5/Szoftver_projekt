@@ -22,7 +22,7 @@ export interface GeneratePlanRequest {
 export interface PlanExercise {
   /** The WorkoutExercise id, used by PATCH /api/plans/exercises/{id}. */
   id: number;
-  /** As it comes from wger, mostly English. */
+  /** Hungarian, from the backend's seed. */
   name: string;
   muscleGroup: string;
   sets: number;
@@ -30,6 +30,9 @@ export interface PlanExercise {
   /** null for bodyweight exercises. */
   weightKg: number | null;
   isDone: boolean;
+  /** What was actually done; null until the user changes it (the plan counts then). */
+  actualReps: number | null;
+  actualWeightKg: number | null;
 }
 
 export interface PlanDay {

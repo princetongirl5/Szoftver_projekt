@@ -10,4 +10,10 @@ export abstract class PlanService {
   abstract getPreferences(): Observable<GeneratePlanRequest>;
   /** PATCH /api/plans/exercises/{id}: marks one exercise done or not done. */
   abstract setExerciseDone(exerciseId: number, isDone: boolean): Observable<void>;
+  /** Same PATCH: marks the exercise done with the reps and weight actually lifted. */
+  abstract logActual(
+    exerciseId: number,
+    actualReps: number,
+    actualWeightKg: number | null,
+  ): Observable<void>;
 }

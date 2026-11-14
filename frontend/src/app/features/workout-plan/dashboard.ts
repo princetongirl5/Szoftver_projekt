@@ -169,6 +169,40 @@ export class Dashboard {
     if (open?.length) this.save(open, true);
   }
 
+  /**
+   * Saves what was actually done, from one of the two fields under a done exercise.
+   * The other value stays as it was (actual, or the plan). An empty or out-of-range
+   * value is not sent; the field goes back to the last value.
+   */
+  saveActual(exercise: PlanExercise, field: 'reps' | 'weight', input: HTMLInputElement): void {
+    const reps = exercise.actualReps ?? exercise.reps;
+    const weight = exercise.actualWeightKg ?? exercise.weightKg;
+    const value = Number(input.value);
+    const valid =
+      input.value.trim() !== '' &&
+      Number.isFinite(value) &&
+      value >= 0 &&
+      (field === 'reps' ? Number.isInteger(value) && value <= 1000 : value <= 2000);
+    if (!valid) {
+      input.value = String(field === 'reps' ? reps : weight);
+      return;
+    }
+
+    const before = { actualReps: exercise.actualReps, actualWeightKg: exercise.actualWeightKg };
+    const after = {
+      actualReps: field === 'reps' ? value : reps,
+      actualWeightKg: exercise.weightKg === null ? null : field === 'weight' ? value : weight,
+    };
+    this.saveError.set(false);
+    this.patchExercise(exercise.id, after);
+    this.planService.logActual(exercise.id, after.actualReps, after.actualWeightKg).subscribe({
+      error: () => {
+        this.patchExercise(exercise.id, before);
+        this.saveError.set(true);
+      },
+    });
+  }
+
   private save(ids: number[], isDone: boolean): void {
     this.saveError.set(false);
     this.setDone(ids, isDone);
@@ -185,6 +219,19 @@ export class Dashboard {
 
   private doneSaving(ids: number[]): void {
     this.saving.update((s) => new Set([...s].filter((id) => !ids.includes(id))));
+  }
+
+  private patchExercise(id: number, patch: Partial<PlanExercise>): void {
+    this.week.update((week) =>
+      week
+        ? {
+            days: week.days.map((day) => ({
+              ...day,
+              exercises: day.exercises.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+            })),
+          }
+        : week,
+    );
   }
 
   private setDone(ids: number[], isDone: boolean): void {
