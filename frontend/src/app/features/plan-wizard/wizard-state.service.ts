@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -11,6 +10,7 @@ import {
   SessionMinutes,
 } from '../../core/models/plan';
 import { PlanService } from '../../core/services/plan.service';
+import { validationMessage } from '../../core/services/validation-message';
 import { DAYS } from './wizard-options';
 
 export type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -167,11 +167,4 @@ export class WizardStateService {
       difficulty: a.difficulty!,
     };
   }
-}
-
-/** The first message of a 400 ValidationProblem; the backend writes them in Hungarian. */
-function validationMessage(error: unknown): string | null {
-  if (!(error instanceof HttpErrorResponse) || error.status !== 400) return null;
-  const errors: Record<string, string[]> | undefined = error.error?.errors;
-  return errors ? (Object.values(errors).flat()[0] ?? null) : null;
 }
