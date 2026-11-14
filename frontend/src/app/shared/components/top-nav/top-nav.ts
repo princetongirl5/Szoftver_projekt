@@ -1,7 +1,8 @@
 import { Component, inject, input } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, LucideIconData, Moon, Sun } from 'lucide-angular';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { LogOut, LucideAngularModule, LucideIconData, Moon, Sun } from 'lucide-angular';
 
+import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
 import { Logo } from '../logo/logo';
 
@@ -60,6 +61,17 @@ export interface NavItem {
       >
         <lucide-icon [img]="dark ? Sun : Moon" aria-hidden="true" />
       </button>
+      @if (auth.user()) {
+        <button
+          type="button"
+          class="cx-theme-toggle"
+          aria-label="Kijelentkezés"
+          title="Kijelentkezés"
+          (click)="logout()"
+        >
+          <lucide-icon [img]="LogOut" aria-hidden="true" />
+        </button>
+      }
     </header>
 
     <nav
@@ -82,6 +94,14 @@ export class TopNav {
   readonly items = input.required<NavItem[]>();
 
   protected readonly theme = inject(ThemeService);
+  protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  protected readonly LogOut = LogOut;
   protected readonly Moon = Moon;
   protected readonly Sun = Sun;
+
+  logout(): void {
+    const toLogin = () => this.router.navigateByUrl('/login');
+    this.auth.logout().subscribe({ complete: toLogin, error: toLogin });
+  }
 }

@@ -5,10 +5,12 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
+import { authInterceptor } from './core/services/auth.service';
+import { languageInterceptor } from './core/services/language.interceptor';
 import { HttpPlanService } from './core/services/http-plan.service';
 import { PlanService } from './core/services/plan.service';
 import { ThemeService } from './core/services/theme.service';
@@ -18,7 +20,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([languageInterceptor, authInterceptor])),
     provideAppInitializer(() => {
       inject(ThemeService);
     }),
