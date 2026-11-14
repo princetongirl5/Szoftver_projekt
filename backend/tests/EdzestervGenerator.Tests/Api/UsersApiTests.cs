@@ -1,71 +1,42 @@
 using System.Net;
 using System.Net.Http.Json;
-using EdzestervGenerator.Api.DTOs;
 
 namespace EdzestervGenerator.Tests.Api;
 
 [Collection("Api")]
 public sealed class UsersApiTests(ApiFactory factory)
 {
-    private readonly HttpClient _client = factory.CreateClient();
-
     [Fact]
-    public async Task Create_returns_201_with_the_new_user()
+    public async Task Register_login_and_manage_info_work()
     {
-        var response = await _client.PostAsJsonAsync("/api/users", new { name = "Anna", email = "anna@example.com" });
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var user = await response.Content.ReadFromJsonAsync<UserDto>(ApiFactory.Json);
-        Assert.NotNull(user);
-        Assert.True(user.Id > 0);
-        Assert.Equal("Anna", user.Name);
-        Assert.Equal(DateTimeKind.Utc, user.CreatedAt.Kind);
+        var (client, id) = await factory.CreateAuthenticatedClient($"user-{Guid.NewGuid():N}@example.com", "Anna");
+        Assert.True(id > 0);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync("/api/auth/logout", null)).StatusCode);
     }
 
     [Fact]
-    public async Task Created_user_can_be_read_and_is_in_the_list()
+    public async Task Protected_api_returns_401_without_login()
     {
-        var created = await CreateUser("Béla");
-
-        var user = await _client.GetFromJsonAsync<UserDto>($"/api/users/{created.Id}", ApiFactory.Json);
-        var all = await _client.GetFromJsonAsync<List<UserDto>>("/api/users", ApiFactory.Json);
-
-        Assert.Equal("Béla", user!.Name);
-        Assert.Contains(all!, u => u.Id == created.Id);
+        using var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/plans/current")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/stats")).StatusCode);
     }
 
     [Fact]
-    public async Task Update_changes_name_and_email()
+    public async Task Legacy_users_endpoints_require_authentication()
     {
-        var created = await CreateUser("Cecil");
-
-        var response = await _client.PutAsJsonAsync($"/api/users/{created.Id}", new { name = "Cecília", email = "cecilia@example.com" });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var user = await _client.GetFromJsonAsync<UserDto>($"/api/users/{created.Id}", ApiFactory.Json);
-        Assert.Equal("Cecília", user!.Name);
-        Assert.Equal("cecilia@example.com", user.Email);
+        using var client = factory.CreateClient();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/users")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/users/1")).StatusCode);
     }
 
     [Fact]
-    public async Task Invalid_data_returns_400()
+    public async Task Duplicate_email_is_rejected()
     {
-        var response = await _client.PostAsJsonAsync("/api/users", new { name = "", email = "not-an-email" });
-
+        var email = $"duplicate-{Guid.NewGuid():N}@example.com";
+        var (first, _) = await factory.CreateAuthenticatedClient(email);
+        using var second = factory.CreateClient();
+        var response = await second.PostAsJsonAsync("/api/auth/register", new { email, password = "TesztJelszo123" });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Unknown_user_returns_404()
-    {
-        Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync("/api/users/99999")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound,
-            (await _client.PutAsJsonAsync("/api/users/99999", new { name = "X", email = "x@example.com" })).StatusCode);
-    }
-
-    private async Task<UserDto> CreateUser(string name)
-    {
-        var response = await _client.PostAsJsonAsync("/api/users", new { name, email = "test@example.com" });
-        return (await response.Content.ReadFromJsonAsync<UserDto>(ApiFactory.Json))!;
     }
 }

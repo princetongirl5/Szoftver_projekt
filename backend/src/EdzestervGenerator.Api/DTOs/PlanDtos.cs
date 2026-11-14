@@ -14,7 +14,7 @@ public sealed record GeneratePlanRequest(
     [Range(45, 90)] int SessionMinutes,
     [EnumDataType(typeof(Difficulty))] Difficulty Difficulty);
 
-public sealed record PlanExerciseDto(int Id, string Name, string MuscleGroup, int Sets, int Reps, double? WeightKg, bool IsDone);
+public sealed record PlanExerciseDto(int Id, string Name, string MuscleGroup, int Sets, int Reps, double? WeightKg, bool IsDone, int? ActualReps = null, double? ActualWeightKg = null);
 public sealed record PlanDayDto(DayOfWeek Day, string? WorkoutName, IReadOnlyList<PlanExerciseDto> Exercises);
 public sealed record WeekPlanDto(IReadOnlyList<PlanDayDto> Days);
-public sealed record UpdatePlanExerciseRequest(bool IsDone);
+public sealed record UpdatePlanExerciseRequest(bool IsDone, int? ActualReps = null, double? ActualWeightKg = null);
