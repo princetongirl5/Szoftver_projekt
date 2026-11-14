@@ -26,4 +26,16 @@ export class HttpPlanService extends PlanService {
   setExerciseDone(exerciseId: number, isDone: boolean): Observable<void> {
     return this.http.patch<void>(`/api/plans/exercises/${exerciseId}`, { isDone });
   }
+
+  logActual(
+    exerciseId: number,
+    actualReps: number,
+    actualWeightKg: number | null,
+  ): Observable<void> {
+    return this.http.patch<void>(`/api/plans/exercises/${exerciseId}`, {
+      isDone: true,
+      actualReps,
+      actualWeightKg,
+    });
+  }
 }

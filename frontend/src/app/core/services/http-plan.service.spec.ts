@@ -61,6 +61,17 @@ describe('HttpPlanService', () => {
     expect(await result).toEqual({ goal: 'Strength' });
   });
 
+  it('patches the actual values as done', async () => {
+    const result = firstValueFrom(service.logActual(42, 8, 22.5));
+
+    const req = http.expectOne('/api/plans/exercises/42');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ isDone: true, actualReps: 8, actualWeightKg: 22.5 });
+    req.flush(null);
+
+    await result;
+  });
+
   it('patches one exercise', async () => {
     const result = firstValueFrom(service.setExerciseDone(42, true));
 
