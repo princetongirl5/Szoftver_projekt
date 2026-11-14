@@ -7,6 +7,27 @@ import { WizardStep } from './wizard-state.service';
 @Component({
   selector: 'app-wizard-stepper',
   imports: [LucideAngularModule],
+  styles: `
+    .short {
+      display: none;
+      margin: 0;
+      font: 500 13px/20px var(--font-sans);
+      color: var(--text-muted);
+    }
+    .short strong {
+      font-weight: 500;
+      color: var(--text);
+    }
+    /* Phone: five labels do not fit, a single line says where we are. */
+    @media (max-width: 767.98px) {
+      .cx-stepper {
+        display: none;
+      }
+      .short {
+        display: block;
+      }
+    }
+  `,
   template: `
     <ol class="cx-stepper" aria-label="Lépések">
       @for (step of steps; track step.label; let i = $index, last = $last) {
@@ -29,6 +50,10 @@ import { WizardStep } from './wizard-state.service';
         }
       }
     </ol>
+    <p class="short">
+      {{ current() }}. lépés az 5-ből ·
+      <strong>{{ steps[current() - 1].label }}</strong>
+    </p>
   `,
 })
 export class WizardStepper {

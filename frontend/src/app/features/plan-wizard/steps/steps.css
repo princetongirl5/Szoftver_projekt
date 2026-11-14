@@ -32,3 +32,11 @@
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* Phone: one option per row, so the hints do not wrap into three lines. */
+@media (max-width: 767.98px) {
+  .grid,
+  .grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
