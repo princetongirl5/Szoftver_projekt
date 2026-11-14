@@ -150,6 +150,44 @@
                     <div class="cx-row__main">
                       <div class="cx-row__title">{{ exercise.name }}</div>
                       <div class="cx-row__meta">{{ muscleLabel(exercise.muscleGroup) }}</div>
+                      @if (exercise.isDone) {
+                        <!-- Prefilled with the plan; only a different value needs typing. -->
+                        <div class="actual">
+                          <span>Elvégezve</span>
+                          <label class="actual__field">
+                            <input
+                              #repsInput
+                              type="number"
+                              class="cx-input actual__input"
+                              min="0"
+                              max="1000"
+                              step="1"
+                              inputmode="numeric"
+                              [value]="exercise.actualReps ?? exercise.reps"
+                              [attr.aria-label]="exercise.name + ': elvégzett ismétlés'"
+                              (change)="saveActual(exercise, 'reps', repsInput)"
+                            />
+                            ism.
+                          </label>
+                          @if (exercise.weightKg !== null) {
+                            <label class="actual__field">
+                              <input
+                                #kgInput
+                                type="number"
+                                class="cx-input actual__input"
+                                min="0"
+                                max="2000"
+                                step="0.5"
+                                inputmode="decimal"
+                                [value]="exercise.actualWeightKg ?? exercise.weightKg"
+                                [attr.aria-label]="exercise.name + ': elvégzett súly, kg'"
+                                (change)="saveActual(exercise, 'weight', kgInput)"
+                              />
+                              kg
+                            </label>
+                          }
+                        </div>
+                      }
                     </div>
                     <div class="cx-row__nums">
                       <span>{{ exercise.sets }} × {{ exercise.reps }}</span>

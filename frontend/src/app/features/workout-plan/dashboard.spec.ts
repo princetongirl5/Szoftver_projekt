@@ -16,6 +16,8 @@ const ex = (id: number, name: string, muscleGroup: string, isDone = false): Plan
   reps: 10,
   weightKg: 40,
   isDone,
+  actualReps: null,
+  actualWeightKg: null,
 });
 
 const WEEK: WeekPlan = {
@@ -36,18 +38,23 @@ const WEEK: WeekPlan = {
 
 describe('Dashboard', () => {
   let setExerciseDone: ReturnType<typeof vi.fn>;
+  let logActual: ReturnType<typeof vi.fn>;
 
   const setup = async (
     week: Observable<WeekPlan> = of(structuredClone(WEEK)),
     save: Observable<void> = of(undefined),
   ) => {
     setExerciseDone = vi.fn(() => save);
+    logActual = vi.fn(() => save);
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
         // Tuesday, 27 October 2026.
         { provide: NOW, useValue: () => new Date(2026, 9, 27, 10) },
-        { provide: PlanService, useValue: { getCurrentWeek: () => week, setExerciseDone } },
+        {
+          provide: PlanService,
+          useValue: { getCurrentWeek: () => week, setExerciseDone, logActual },
+        },
       ],
     });
     const fixture = TestBed.createComponent(Dashboard);
@@ -123,6 +130,37 @@ describe('Dashboard', () => {
 
     expect(el.querySelector('.cx-check')!.getAttribute('aria-checked')).toBe('false');
     expect(text(el.querySelector('[role="alert"]'))).toContain('Nem sikerült menteni');
+  });
+
+  it('logs a different weight under a done exercise, keeping the planned reps', async () => {
+    const fixture = await setup();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.actual')).toBeNull();
+
+    el.querySelector<HTMLButtonElement>('.cx-check')!.click();
+    fixture.detectChanges();
+    const [reps, kg] = [...el.querySelectorAll<HTMLInputElement>('.actual__input')];
+    expect([reps.value, kg.value]).toEqual(['10', '40']);
+
+    kg.value = '42.5';
+    kg.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(logActual).toHaveBeenCalledWith(2, 10, 42.5);
+  });
+
+  it('does not send an empty or negative value', async () => {
+    const fixture = await setup();
+    const el: HTMLElement = fixture.nativeElement;
+    el.querySelector<HTMLButtonElement>('.cx-check')!.click();
+    fixture.detectChanges();
+
+    const reps = el.querySelector<HTMLInputElement>('.actual__input')!;
+    reps.value = '-3';
+    reps.dispatchEvent(new Event('change'));
+
+    expect(logActual).not.toHaveBeenCalled();
+    expect(reps.value).toBe('10');
   });
 
   it('shows a rest day when one is selected', async () => {

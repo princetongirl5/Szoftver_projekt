@@ -20,6 +20,8 @@ const ex = (
   reps,
   weightKg,
   isDone: false,
+  actualReps: null,
+  actualWeightKg: null,
 });
 
 const MOCK_WEEK: WeekPlan = {
@@ -98,6 +100,17 @@ export class MockPlanService extends PlanService {
     const exercise = this.week.days.flatMap((d) => d.exercises).find((e) => e.id === exerciseId);
     if (!exercise) return throwError(() => new Error(`No exercise with id ${exerciseId}`));
     exercise.isDone = isDone;
+    return of(undefined).pipe(delay(150));
+  }
+
+  logActual(
+    exerciseId: number,
+    actualReps: number,
+    actualWeightKg: number | null,
+  ): Observable<void> {
+    const exercise = this.week.days.flatMap((d) => d.exercises).find((e) => e.id === exerciseId);
+    if (!exercise) return throwError(() => new Error(`No exercise with id ${exerciseId}`));
+    Object.assign(exercise, { isDone: true, actualReps, actualWeightKg });
     return of(undefined).pipe(delay(150));
   }
 }

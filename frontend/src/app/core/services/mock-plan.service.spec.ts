@@ -19,7 +19,17 @@ describe('MockPlanService', () => {
     }
     for (const ex of workouts.flatMap((d) => d.exercises)) {
       expect(Object.keys(ex).sort()).toEqual(
-        ['id', 'isDone', 'muscleGroup', 'name', 'reps', 'sets', 'weightKg'].sort(),
+        [
+          'actualReps',
+          'actualWeightKg',
+          'id',
+          'isDone',
+          'muscleGroup',
+          'name',
+          'reps',
+          'sets',
+          'weightKg',
+        ].sort(),
       );
       expect(ex.sets).toBeGreaterThan(0);
       expect(ex.reps).toBeGreaterThan(0);
