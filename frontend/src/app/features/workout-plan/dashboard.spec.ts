@@ -62,7 +62,7 @@ describe('Dashboard', () => {
   it('shows the week with today selected', async () => {
     const el: HTMLElement = (await setup()).nativeElement;
 
-    expect(text(el.querySelector('.cx-eyebrow'))).toBe('okt. 26 - nov. 1 · Upper / Lower');
+    expect(text(el.querySelector('.cx-eyebrow'))).toBe('okt. 26 - nov. 1 · Felsőtest / Alsótest');
     expect(text(el.querySelector('.week-progress__label .cx-num'))).toBe('1 / 4 edzés');
 
     const days = [...el.querySelectorAll('.strip .cx-day')];
