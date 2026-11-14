@@ -1,12 +1,14 @@
 using EdzestervGenerator.Api.Data;
 using EdzestervGenerator.Api.DTOs;
 using EdzestervGenerator.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EdzestervGenerator.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/users")]
 public class UsersController(AppDbContext db) : ControllerBase
 {
