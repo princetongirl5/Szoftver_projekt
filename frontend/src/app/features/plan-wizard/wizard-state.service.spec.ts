@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { GeneratePlanRequest, WeekPlan } from '../../core/models/plan';
 import { PlanService } from '../../core/services/plan.service';
@@ -12,13 +12,17 @@ describe('WizardStateService', () => {
   let generate: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.spyOn>;
 
-  const setup = (result = of<WeekPlan>({ days: [] })) => {
+  const setup = (
+    result = of<WeekPlan>({ days: [] }),
+    currentWeek: Observable<WeekPlan> = of({ days: [] }),
+  ) => {
     generate = vi.fn((_: GeneratePlanRequest) => result);
+    const getCurrentWeek = vi.fn(() => currentWeek);
     TestBed.configureTestingModule({
       providers: [
         WizardStateService,
         provideRouter([]),
-        { provide: PlanService, useValue: { generate } },
+        { provide: PlanService, useValue: { generate, getCurrentWeek } },
       ],
     });
     navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -137,5 +141,28 @@ describe('WizardStateService', () => {
     expect(state.step()).toBe(1);
     expect(state.answers().goal).toBeNull();
     expect(state.status()).toBe('idle');
+  });
+
+  it('leaves to /week when this week has a plan', () => {
+    setup();
+    fillAll();
+
+    state.leave();
+
+    expect(navigate).toHaveBeenCalledWith('/week');
+  });
+
+  it('starts over on leave when there is no plan yet', () => {
+    setup(
+      undefined,
+      throwError(() => new HttpErrorResponse({ status: 404 })),
+    );
+    fillAll();
+
+    state.leave();
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(state.step()).toBe(1);
+    expect(state.answers().goal).toBeNull();
   });
 });

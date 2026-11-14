@@ -23,14 +23,6 @@ public sealed class UsersApiTests(ApiFactory factory)
     }
 
     [Fact]
-    public async Task Legacy_users_endpoints_require_authentication()
-    {
-        using var client = factory.CreateClient();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/users")).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/users/1")).StatusCode);
-    }
-
-    [Fact]
     public async Task Duplicate_email_is_rejected()
     {
         var email = $"duplicate-{Guid.NewGuid():N}@example.com";

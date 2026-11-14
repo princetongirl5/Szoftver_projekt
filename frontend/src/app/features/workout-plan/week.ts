@@ -87,14 +87,14 @@ export const weekRange = (dates: Date[]): string => {
   return `${MONTHS[first.getMonth()]} ${first.getDate()} - ${MONTHS[last.getMonth()]} ${last.getDate()}`;
 };
 
-/** "Upper / Lower" for the 4-day split, "Full body" for 2-3 days, otherwise nothing. */
+/** "Felsőtest / Alsótest" for 4-6 days, "Teljes test" for 2-3 days (like the wizard), otherwise nothing. */
 export const splitName = (days: PlanDay[]): string | null => {
   const names = days.map((d) => d.workoutName).filter((n): n is string => n !== null);
   if (!names.length) return null;
   if (names.every((n) => n.startsWith('Felsőtest') || n.startsWith('Alsótest'))) {
-    return 'Upper / Lower';
+    return 'Felsőtest / Alsótest';
   }
-  if (names.every((n) => n.startsWith('Teljes test'))) return 'Full body';
+  if (names.every((n) => n.startsWith('Teljes test'))) return 'Teljes test';
   return null;
 };
 
