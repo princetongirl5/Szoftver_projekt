@@ -11,8 +11,23 @@ describe('LocationStep', () => {
   };
 
   it('shows the equipment chips at home', () => {
-    const el = render({ selected: 'Home', equipment: [{ id: 1, name: 'Kézisúlyzó' }] });
+    const el = render({
+      selected: 'Home',
+      equipment: [{ id: 1, name: 'Kézisúlyzó', location: 'Home' }],
+    });
     expect(el.querySelector('.cx-chip')?.textContent?.trim()).toBe('Kézisúlyzó');
+  });
+
+  it('leaves out the gym-only equipment at home', () => {
+    const el = render({
+      selected: 'Home',
+      equipment: [
+        { id: 1, name: 'Kézisúlyzó', location: 'Home' },
+        { id: 8, name: 'Rúd', location: 'Gym' },
+      ],
+    });
+    const chips = [...el.querySelectorAll('.cx-chip')].map((c) => c.textContent?.trim());
+    expect(chips).toEqual(['Kézisúlyzó']);
   });
 
   it('shows an error message instead of the chips when loading failed', () => {
@@ -22,7 +37,10 @@ describe('LocationStep', () => {
   });
 
   it('asks nothing more in the gym', () => {
-    const el = render({ selected: 'Gym', equipment: [{ id: 1, name: 'Kézisúlyzó' }] });
+    const el = render({
+      selected: 'Gym',
+      equipment: [{ id: 1, name: 'Kézisúlyzó', location: 'Home' }],
+    });
     expect(el.querySelector('.cx-chip')).toBeNull();
   });
 });

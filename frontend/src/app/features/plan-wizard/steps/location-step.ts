@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { CircleAlert, LucideAngularModule } from 'lucide-angular';
 
 import { Equipment } from '../../../core/models/equipment';
@@ -36,7 +36,7 @@ import { LOCATIONS } from '../wizard-options';
           <p class="cx-muted">Eszközök betöltése…</p>
         } @else {
           <div class="chips">
-            @for (item of equipment(); track item.id) {
+            @for (item of homeEquipment(); track item.id) {
               <button
                 type="button"
                 class="cx-chip"
@@ -61,6 +61,11 @@ export class LocationStep {
 
   readonly selectLocation = output<Location>();
   readonly toggleEquipment = output<number>();
+
+  /** Gym-only items (barbell, cable machine...) are no choice at home. */
+  protected readonly homeEquipment = computed(() =>
+    this.equipment().filter((item) => item.location === 'Home'),
+  );
 
   protected readonly locations = LOCATIONS;
   protected readonly CircleAlert = CircleAlert;

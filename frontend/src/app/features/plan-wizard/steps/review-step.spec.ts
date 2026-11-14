@@ -17,9 +17,9 @@ describe('ReviewStep', () => {
     const fixture = TestBed.createComponent(ReviewStep);
     fixture.componentRef.setInput('answers', ANSWERS);
     fixture.componentRef.setInput('equipment', [
-      { id: 1, name: 'Kézisúlyzó' },
-      { id: 2, name: 'Kettlebell' },
-      { id: 3, name: 'Húzódzkodó rúd' },
+      { id: 1, name: 'Kézisúlyzó', location: 'Home' },
+      { id: 2, name: 'Kettlebell', location: 'Home' },
+      { id: 3, name: 'Húzódzkodó rúd', location: 'Home' },
     ]);
     fixture.detectChanges();
 
