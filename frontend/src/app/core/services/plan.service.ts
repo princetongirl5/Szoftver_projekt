@@ -6,6 +6,8 @@ import { GeneratePlanRequest, WeekPlan } from '../models/plan';
 export abstract class PlanService {
   abstract generate(request: GeneratePlanRequest): Observable<WeekPlan>;
   abstract getCurrentWeek(): Observable<WeekPlan>;
+  /** The answers of the user's last generate; completes empty (or 404s) when there are none. */
+  abstract getPreferences(): Observable<GeneratePlanRequest>;
   /** PATCH /api/plans/exercises/{id}: marks one exercise done or not done. */
   abstract setExerciseDone(exerciseId: number, isDone: boolean): Observable<void>;
 }
