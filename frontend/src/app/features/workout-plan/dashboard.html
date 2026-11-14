@@ -56,7 +56,7 @@
       <button type="button" class="cx-btn cx-btn--ghost retry" (click)="plan.reload()">Újra</button>
     </div>
   } @else {
-    <div class="strip" role="group" aria-label="A hét napjai">
+    <div class="strip" role="group" aria-label="A hét napjai" #strip>
       @for (day of days(); track day.index) {
         <button
           type="button"

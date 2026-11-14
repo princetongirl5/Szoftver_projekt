@@ -7,3 +7,10 @@
 body {
   margin: 0;
 }
+
+/* Room for the fixed bottom tab bar on phones (below bp-md, see TopNav). */
+@media (max-width: 767.98px) {
+  body:has(.cx-tabbar) {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}
