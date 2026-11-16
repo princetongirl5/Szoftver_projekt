@@ -86,9 +86,11 @@
       <div class="columns">
         <section class="workout" aria-labelledby="workout-title">
           <div class="cx-media workout__media">
-            <span class="cx-media__empty">
-              <lucide-icon [img]="Image" aria-hidden="true" />
-            </span>
+            <img
+              src="/images/muscles/workout-placeholder.webp"
+              alt="Napi edzés"
+              class="workout__image"
+            />
           </div>
 
           <div class="workout__body">
@@ -189,9 +191,11 @@
               <span class="cx-muted side__day">{{ day.label }}</span>
             </div>
             <div class="cx-media cx-media--square side__map">
-              <span class="cx-media__empty">
-                <lucide-icon [img]="PersonStanding" aria-hidden="true" />
-              </span>
+              <img
+                src="/images/muscles/muscle-groups.webp"
+                alt="Érintett izomcsoportok"
+                class="muscle-groups__image"
+              />
             </div>
             @if (selectedMuscles().length) {
               <ul class="muscles">
