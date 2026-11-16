@@ -5,27 +5,27 @@ import { WizardStep } from './wizard-state.service';
 
 const PANELS = [
   {
-    image: 'Kép: célok',
+    image: '/images/plan-wizard/goals.webp',
     heading: 'A cél dönti el az ismétlésszámot',
     text: 'Erőnél kevés ismétlés és hosszú pihenő kell, izomépítésnél 8-12 ismétlés több sorozatban. Ugyanaz a gyakorlat más célra máshogy épül fel.',
   },
   {
-    image: 'Kép: otthoni eszközök',
+    image: '/images/plan-wizard/equipment.webp',
     heading: 'Csak olyat kapsz, amit meg tudsz csinálni',
     text: 'Ha nincs rudad, a tervező kézisúlyzós vagy testsúlyos változatot választ ugyanarra az izomcsoportra.',
   },
   {
-    image: 'Kép: heti felosztás',
+    image: '/images/plan-wizard/weekly-split.webp',
     heading: 'A napokból lesz a felosztás',
     text: '2-3 napnál teljes test, 4-6 napnál felső és alsó test váltja egymást, így két egymást követő napon más izmok dolgoznak.',
   },
   {
-    image: 'Kép: edzés közben',
+    image: '/images/plan-wizard/training.webp',
     heading: 'Az idő és a szint adja a mennyiséget',
     text: '60 percbe általában 5 gyakorlat fér bele. Kezdőként kevesebb sorozattal indulsz.',
   },
   {
-    image: 'Kép: kész terv',
+    image: '/images/plan-wizard/completed-plan.webp',
     heading: 'Bármikor újratervezheted',
     text: 'Ha változik a heted vagy új eszközöd lesz, a Tervezés menüpontban új tervet kérhetsz. Az új terv a mostani hét helyére kerül.',
   },
