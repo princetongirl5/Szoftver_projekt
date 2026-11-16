@@ -53,12 +53,8 @@ const PANELS = [
   `,
   template: `
     @let panel = current();
-    <!-- Image slot: the pictures are not chosen yet. -->
     <div class="cx-media">
-      <span class="cx-media__empty">
-        <lucide-icon [img]="Image" aria-hidden="true" />
-        {{ panel.image }}
-      </span>
+      <img [src]="panel.image" alt="" />
     </div>
     <div>
       <div class="cx-eyebrow">Miért kérdezzük?</div>
